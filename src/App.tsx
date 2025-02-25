@@ -5,6 +5,7 @@ import CssBaseline from '@mui/material/CssBaseline';
 import Layout from './components/Layout';
 import Dashboard from './pages/Dashboard';
 import Services from './pages/Services';
+import Categories from './pages/Categories';
 import Settings from './pages/Settings';
 
 const theme = createTheme({
@@ -27,6 +28,7 @@ function App() {
         <Routes>
           <Route path="/" element={<Layout />}>
             <Route index element={<Dashboard />} />
+            <Route path="categories" element={<Categories />} />
             <Route path="services" element={<Services />} />
             <Route path="staff" element={<div>Staff Management</div>} />
             <Route path="schedule" element={<div>Schedule Management</div>} />

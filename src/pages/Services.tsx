@@ -9,10 +9,21 @@ import {
   TextField,
   Typography,
   Paper,
+  FormControl,
+  InputLabel,
+  Select,
+  MenuItem,
 } from '@mui/material';
 import { DataGrid, GridColDef } from '@mui/x-data-grid';
 import { collection, getDocs, addDoc, updateDoc, doc, deleteDoc } from 'firebase/firestore';
 import { db } from '../config/firebase';
+
+interface Category {
+  id: string;
+  name: string;
+  description: string;
+  active: boolean;
+}
 
 interface Service {
   id: string;
@@ -22,22 +33,31 @@ interface Service {
   price: number;
   categoryId: string;
   active: boolean;
+  category?: Category;
 }
 
 export default function Services() {
   const [services, setServices] = useState<Service[]>([]);
+  const [categories, setCategories] = useState<Category[]>([]);
   const [open, setOpen] = useState(false);
   const [newService, setNewService] = useState<Partial<Service>>({
     name: '',
     description: '',
     duration: 30,
     price: 0,
+    categoryId: '',
     active: true,
   });
 
   const columns: GridColDef[] = [
     { field: 'name', headerName: 'Name', width: 200 },
     { field: 'description', headerName: 'Description', width: 300 },
+    { 
+      field: 'category',
+      headerName: 'Category',
+      width: 150,
+      valueGetter: (params) => params.row.category?.name || 'None',
+    },
     { field: 'duration', headerName: 'Duration (min)', width: 130, type: 'number' },
     { field: 'price', headerName: 'Price', width: 130, type: 'number' },
     { field: 'active', headerName: 'Active', width: 130, type: 'boolean' },
@@ -69,16 +89,39 @@ export default function Services() {
   ];
 
   useEffect(() => {
+    fetchCategories();
     fetchServices();
   }, []);
 
+  const fetchCategories = async () => {
+    try {
+      const querySnapshot = await getDocs(collection(db, 'serviceCategories'));
+      const categoriesData = querySnapshot.docs.map((doc) => ({
+        id: doc.id,
+        ...doc.data(),
+      })) as Category[];
+      setCategories(categoriesData);
+    } catch (error) {
+      console.error('Error fetching categories:', error);
+    }
+  };
+
   const fetchServices = async () => {
-    const querySnapshot = await getDocs(collection(db, 'services'));
-    const servicesData = querySnapshot.docs.map((doc) => ({
-      id: doc.id,
-      ...doc.data(),
-    })) as Service[];
-    setServices(servicesData);
+    try {
+      const querySnapshot = await getDocs(collection(db, 'services'));
+      const servicesData = querySnapshot.docs.map((doc) => {
+        const data = doc.data();
+        const category = categories.find(c => c.id === data.categoryId);
+        return {
+          id: doc.id,
+          ...data,
+          category,
+        };
+      }) as Service[];
+      setServices(servicesData);
+    } catch (error) {
+      console.error('Error fetching services:', error);
+    }
   };
 
   const handleSubmit = async () => {
@@ -187,6 +230,21 @@ export default function Services() {
               setNewService({ ...newService, price: parseFloat(e.target.value) })
             }
           />
+          <FormControl fullWidth margin="dense">
+            <InputLabel>Category</InputLabel>
+            <Select
+              value={newService.categoryId || ''}
+              label="Category"
+              onChange={(e) => setNewService({ ...newService, categoryId: e.target.value })}
+            >
+              <MenuItem value="">None</MenuItem>
+              {categories.map((category) => (
+                <MenuItem key={category.id} value={category.id}>
+                  {category.name}
+                </MenuItem>
+              ))}
+            </Select>
+          </FormControl>
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setOpen(false)}>Cancel</Button>

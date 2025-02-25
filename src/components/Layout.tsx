@@ -48,6 +48,7 @@ const Main = styled('main', { shouldForwardProp: (prop) => prop !== 'open' })<{
 
 const menuItems = [
   { text: 'Dashboard', icon: <DashboardIcon />, path: '/' },
+  { text: 'Categories', icon: <CategoryIcon />, path: '/categories' },
   { text: 'Services', icon: <CategoryIcon />, path: '/services' },
   { text: 'Staff', icon: <PeopleIcon />, path: '/staff' },
   { text: 'Schedule', icon: <CalendarIcon />, path: '/schedule' },
