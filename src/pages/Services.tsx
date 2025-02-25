@@ -1,4 +1,8 @@
 import { useState, useEffect } from 'react';
+import EditIcon from '@mui/icons-material/Edit';
+import DeleteIcon from '@mui/icons-material/Delete';
+import ArrowUpwardIcon from '@mui/icons-material/ArrowUpward';
+import ArrowDownwardIcon from '@mui/icons-material/ArrowDownward';
 import {
   Box,
   Button,
@@ -15,6 +19,8 @@ import {
   InputLabel,
   Select,
   MenuItem,
+  IconButton,
+  Switch,
 } from '@mui/material';
 import { DataGrid, GridColDef } from '@mui/x-data-grid';
 import { collection, getDocs, addDoc, updateDoc, doc, deleteDoc } from 'firebase/firestore';
@@ -56,35 +62,68 @@ export default function Services() {
   });
 
   const columns: GridColDef[] = [
-    { field: 'order', headerName: 'Order', flex: 0.5, minWidth: 70, type: 'number' },
+
     { field: 'name', headerName: 'Name', flex: 1, minWidth: 150 },
     { field: 'description', headerName: 'Description', flex: 1.5, minWidth: 200 },
     { field: 'categoryName', headerName: 'Category', flex: 1, minWidth: 120 },
     { field: 'duration', headerName: 'Duration (min)', flex: 0.8, minWidth: 100, type: 'number' },
     { field: 'price', headerName: 'Price', flex: 0.8, minWidth: 80, type: 'number' },
-    { field: 'active', headerName: 'Active', flex: 0.5, minWidth: 80, type: 'boolean' },
+    { 
+      field: 'active', 
+      headerName: 'Active', 
+      flex: 0.5, 
+      minWidth: 80, 
+      type: 'boolean',
+      renderCell: (params) => (
+        <Switch
+          checked={params.value}
+          onChange={async (e) => {
+            try {
+              await updateDoc(doc(db, 'services', params.row.id), {
+                active: e.target.checked,
+                updatedAt: new Date(),
+              });
+              await fetchServices();
+            } catch (error) {
+              setError('Failed to update service status');
+            }
+          }}
+        />
+      ),
+    },
     {
       field: 'actions',
       headerName: 'Actions',
-      width: 200,
+      width: 250,
       renderCell: (params) => (
         <Box>
-          <Button
-            variant="outlined"
+          <IconButton
+            size="small"
+            onClick={() => handleMove(params.row.id, 'up')}
+            disabled={loading || params.row.order === 0}
+          >
+            <ArrowUpwardIcon />
+          </IconButton>
+          <IconButton
+            size="small"
+            onClick={() => handleMove(params.row.id, 'down')}
+            disabled={loading || params.row.order === services.length - 1}
+          >
+            <ArrowDownwardIcon />
+          </IconButton>
+          <IconButton
             size="small"
             onClick={() => handleEdit(params.row)}
-            sx={{ mr: 1 }}
           >
-            Edit
-          </Button>
-          <Button
-            variant="outlined"
-            color="error"
+            <EditIcon />
+          </IconButton>
+          <IconButton
             size="small"
             onClick={() => handleDelete(params.row.id)}
+            color="error"
           >
-            Delete
-          </Button>
+            <DeleteIcon />
+          </IconButton>
         </Box>
       ),
     },
@@ -92,9 +131,13 @@ export default function Services() {
 
   useEffect(() => {
     const loadData = async () => {
+      console.log('Loading data...');
       setLoading(true);
+      console.log('Setting loading state...');
       try {
+        console.log('Fetching categories...');
         await fetchCategories();
+        console.log('Fetching services...');
         await fetchServices();
       } catch (error) {
         setError('Failed to load data. Please try refreshing the page.');
@@ -125,6 +168,36 @@ export default function Services() {
     }
   };
 
+  const handleMove = async (id: string, direction: 'up' | 'down') => {
+    try {
+      setLoading(true);
+      const currentIndex = services.findIndex(s => s.id === id);
+      const newIndex = direction === 'up' ? currentIndex - 1 : currentIndex + 1;
+      
+      if (newIndex < 0 || newIndex >= services.length) return;
+      
+      const newServices = [...services];
+      const [movedService] = newServices.splice(currentIndex, 1);
+      newServices.splice(newIndex, 0, movedService);
+      
+      // Update all services with new order
+      await Promise.all(
+        newServices.map((service, index) =>
+          updateDoc(doc(db, 'services', service.id), {
+            order: index,
+            updatedAt: new Date(),
+          })
+        )
+      );
+      
+      await fetchServices();
+    } catch (error) {
+      setError('Failed to move service');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const fetchServices = async () => {
     try {
       const querySnapshot = await getDocs(collection(db, 'services'));
@@ -140,7 +213,7 @@ export default function Services() {
           categoryId: data.categoryId || '',
           categoryName: category?.name || 'None',
           active: typeof data.active === 'boolean' ? data.active : true,
-          order: data.order || 0,
+          order: typeof data.order === 'number' ? data.order : 0,
         };
       });
 
@@ -153,6 +226,8 @@ export default function Services() {
         return a.order - b.order;
       });
 
+      // Sort by order
+      servicesData.sort((a, b) => a.order - b.order);
       setServices(servicesData);
     } catch (error) {
       console.error('Error fetching services:', error);
@@ -164,7 +239,7 @@ export default function Services() {
     try {
       const serviceData = {
         ...newService,
-        order: newService.order || services.filter(s => s.categoryId === newService.categoryId).length,
+        order: typeof newService.order === 'number' ? newService.order : services.length,
         updatedAt: new Date(),
       };
 
@@ -173,6 +248,7 @@ export default function Services() {
       } else {
         await addDoc(collection(db, 'services'), {
           ...serviceData,
+          order: services.length,
           createdAt: new Date(),
         });
       }

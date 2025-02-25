@@ -1,4 +1,8 @@
 import { useState, useEffect } from 'react';
+import EditIcon from '@mui/icons-material/Edit';
+import DeleteIcon from '@mui/icons-material/Delete';
+import ArrowUpwardIcon from '@mui/icons-material/ArrowUpward';
+import ArrowDownwardIcon from '@mui/icons-material/ArrowDownward';
 import {
   Box,
   Button,
@@ -11,6 +15,8 @@ import {
   Paper,
   useTheme,
   useMediaQuery,
+  IconButton,
+  Switch,
 } from '@mui/material';
 import { DataGrid, GridColDef } from '@mui/x-data-grid';
 import { collection, getDocs, addDoc, updateDoc, doc, deleteDoc } from 'firebase/firestore';
@@ -22,6 +28,7 @@ interface Category {
   name: string;
   description: string;
   active: boolean;
+  order: number;
   createdAt: any;
   updatedAt: any;
 }
@@ -38,34 +45,66 @@ export default function Categories() {
   });
 
   const columns: GridColDef[] = [
-    { field: 'order', headerName: 'Order', flex: 0.5, minWidth: 70, type: 'number' },
     { field: 'name', headerName: 'Name', flex: 1, minWidth: 150 },
     { field: 'description', headerName: 'Description', flex: 2, minWidth: 200 },
-    { field: 'active', headerName: 'Active', flex: 0.5, minWidth: 100, type: 'boolean' },
+    { 
+      field: 'active', 
+      headerName: 'Active', 
+      flex: 0.5, 
+      minWidth: 100, 
+      type: 'boolean',
+      renderCell: (params) => (
+        <Switch
+          checked={params.value}
+          onChange={async (e) => {
+            try {
+              await updateDoc(doc(db, 'serviceCategories', params.row.id), {
+                active: e.target.checked,
+                updatedAt: new Date(),
+              });
+              await fetchCategories();
+            } catch (error) {
+              setError('Failed to update category status');
+            }
+          }}
+        />
+      ),
+    },
     {
       field: 'actions',
       headerName: 'Actions',
-      width: 200,
+      width: 250,
       renderCell: (params) => {
         if (!params.row) return null;
         return (
           <Box>
-            <Button
-              variant="outlined"
+            <IconButton
+              size="small"
+              onClick={() => handleMove(params.row.id, 'up')}
+              disabled={loading || params.row.order === 0}
+            >
+              <ArrowUpwardIcon />
+            </IconButton>
+            <IconButton
+              size="small"
+              onClick={() => handleMove(params.row.id, 'down')}
+              disabled={loading || params.row.order === categories.length - 1}
+            >
+              <ArrowDownwardIcon />
+            </IconButton>
+            <IconButton
               size="small"
               onClick={() => handleEdit(params.row)}
-              sx={{ mr: 1 }}
             >
-              Edit
-            </Button>
-            <Button
-              variant="outlined"
-              color="error"
+              <EditIcon />
+            </IconButton>
+            <IconButton
               size="small"
               onClick={() => handleDelete(params.row.id)}
+              color="error"
             >
-              Delete
-            </Button>
+              <DeleteIcon />
+            </IconButton>
           </Box>
         );
       },
@@ -73,9 +112,13 @@ export default function Categories() {
   ];
 
   useEffect(() => {
+    console.log('Categories: Starting useEffect...');
     const loadData = async () => {
+      console.log('Categories: Loading data...');
       setLoading(true);
+      console.log('Categories: Setting loading state...');
       try {
+        console.log('Categories: Fetching categories...');
         await fetchCategories();
       } catch (error) {
         console.error('Error loading categories:', error);
@@ -85,6 +128,36 @@ export default function Categories() {
     };
     loadData();
   }, []);
+
+  const handleMove = async (id: string, direction: 'up' | 'down') => {
+    try {
+      setLoading(true);
+      const currentIndex = categories.findIndex(c => c.id === id);
+      const newIndex = direction === 'up' ? currentIndex - 1 : currentIndex + 1;
+      
+      if (newIndex < 0 || newIndex >= categories.length) return;
+      
+      const newCategories = [...categories];
+      const [movedCategory] = newCategories.splice(currentIndex, 1);
+      newCategories.splice(newIndex, 0, movedCategory);
+      
+      // Update all categories with new order
+      await Promise.all(
+        newCategories.map((category, index) =>
+          updateDoc(doc(db, 'serviceCategories', category.id), {
+            order: index,
+            updatedAt: new Date(),
+          })
+        )
+      );
+      
+      await fetchCategories();
+    } catch (error) {
+      setError('Failed to move category');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const fetchCategories = async () => {
     try {
@@ -101,6 +174,8 @@ export default function Categories() {
       });
       // Sort categories by order
       categoriesData.sort((a, b) => a.order - b.order);
+      // Sort by order
+      categoriesData.sort((a, b) => a.order - b.order);
       setCategories(categoriesData);
     } catch (error) {
       console.error('Error fetching categories:', error);
@@ -112,7 +187,7 @@ export default function Categories() {
     try {
       const categoryData = {
         ...newCategory,
-        order: newCategory.order || categories.length,
+        order: typeof newCategory.order === 'number' ? newCategory.order : categories.length,
         updatedAt: new Date(),
       };
       
@@ -121,6 +196,7 @@ export default function Categories() {
       } else {
         await addDoc(collection(db, 'serviceCategories'), {
           ...categoryData,
+          order: categories.length,
           createdAt: new Date(),
         });
       }

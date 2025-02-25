@@ -1,6 +1,8 @@
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { ThemeProvider, createTheme } from '@mui/material/styles';
 import CssBaseline from '@mui/material/CssBaseline';
+import { useEffect } from 'react';
+import { initializeCollections } from './utils/initializeFirestore';
 
 import Layout from './components/Layout';
 import Dashboard from './pages/Dashboard';
@@ -22,6 +24,11 @@ const theme = createTheme({
 });
 
 function App() {
+  useEffect(() => {
+    // Initialize Firestore collections if they don't exist
+    initializeCollections();
+  }, []);
+
   return (
     <ThemeProvider theme={theme}>
       <CssBaseline />

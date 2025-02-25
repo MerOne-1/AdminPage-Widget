@@ -9,7 +9,7 @@ import {
   Chip,
 } from '@mui/material';
 import { DataGrid, GridColDef } from '@mui/x-data-grid';
-import { collection, query, orderBy, getDocs, onSnapshot } from 'firebase/firestore';
+import { collection, query, orderBy, getDocs, onSnapshot, Timestamp } from 'firebase/firestore';
 import { db } from '../config/firebase';
 import { format } from 'date-fns';
 
@@ -23,7 +23,7 @@ interface Booking {
   date: string;
   time: string;
   status: 'pending' | 'confirmed' | 'cancelled';
-  createdAt: any;
+  createdAt: Timestamp;
 }
 
 interface DashboardStats {
@@ -48,7 +48,14 @@ export default function Dashboard() {
       field: 'date',
       headerName: 'Date',
       width: 130,
-      valueFormatter: (params) => format(new Date(params.value), 'MM/dd/yyyy'),
+      valueFormatter: (params) => {
+        try {
+          return format(new Date(params.value), 'MM/dd/yyyy');
+        } catch (error) {
+          console.error('Error formatting date:', error);
+          return params.value;
+        }
+      },
     },
     { field: 'time', headerName: 'Time', width: 100 },
     {
@@ -75,10 +82,14 @@ export default function Dashboard() {
     // Subscribe to real-time updates for bookings
     const q = query(collection(db, 'bookings'), orderBy('createdAt', 'desc'));
     const unsubscribe = onSnapshot(q, (snapshot) => {
-      const bookingsData = snapshot.docs.map((doc) => ({
-        id: doc.id,
-        ...doc.data(),
-      })) as Booking[];
+      const bookingsData = snapshot.docs.map((doc) => {
+        const data = doc.data();
+        return {
+          id: doc.id,
+          ...data,
+          createdAt: data.createdAt instanceof Timestamp ? data.createdAt.toDate() : new Date(),
+        };
+      }) as Booking[];
       setBookings(bookingsData);
 
       // Update stats
