@@ -37,6 +37,7 @@ interface Service {
   categoryId: string;
   categoryName: string;
   active: boolean;
+  order: number;
 }
 
 export default function Services() {
@@ -55,6 +56,7 @@ export default function Services() {
   });
 
   const columns: GridColDef[] = [
+    { field: 'order', headerName: 'Order', flex: 0.5, minWidth: 70, type: 'number' },
     { field: 'name', headerName: 'Name', flex: 1, minWidth: 150 },
     { field: 'description', headerName: 'Description', flex: 1.5, minWidth: 200 },
     { field: 'categoryName', headerName: 'Category', flex: 1, minWidth: 120 },
@@ -138,8 +140,19 @@ export default function Services() {
           categoryId: data.categoryId || '',
           categoryName: category?.name || 'None',
           active: typeof data.active === 'boolean' ? data.active : true,
+          order: data.order || 0,
         };
       });
+
+      // Sort services first by category order, then by service order within category
+      servicesData.sort((a, b) => {
+        const categoryA = categories.find(c => c.id === a.categoryId);
+        const categoryB = categories.find(c => c.id === b.categoryId);
+        const categoryOrderDiff = (categoryA?.order || 0) - (categoryB?.order || 0);
+        if (categoryOrderDiff !== 0) return categoryOrderDiff;
+        return a.order - b.order;
+      });
+
       setServices(servicesData);
     } catch (error) {
       console.error('Error fetching services:', error);
@@ -149,16 +162,18 @@ export default function Services() {
 
   const handleSubmit = async () => {
     try {
+      const serviceData = {
+        ...newService,
+        order: newService.order || services.filter(s => s.categoryId === newService.categoryId).length,
+        updatedAt: new Date(),
+      };
+
       if (newService.id) {
-        await updateDoc(doc(db, 'services', newService.id), {
-          ...newService,
-          updatedAt: new Date(),
-        });
+        await updateDoc(doc(db, 'services', newService.id), serviceData);
       } else {
         await addDoc(collection(db, 'services'), {
-          ...newService,
+          ...serviceData,
           createdAt: new Date(),
-          updatedAt: new Date(),
         });
       }
       setOpen(false);
@@ -271,13 +286,30 @@ export default function Services() {
               onChange={(e) => setNewService({ ...newService, categoryId: e.target.value })}
             >
               <MenuItem value="">None</MenuItem>
-              {categories.map((category) => (
-                <MenuItem key={category.id} value={category.id}>
-                  {category.name}
-                </MenuItem>
-              ))}
+              {categories
+                .sort((a, b) => a.order - b.order)
+                .map((category) => (
+                  <MenuItem key={category.id} value={category.id}>
+                    {category.name}
+                  </MenuItem>
+                ))}
             </Select>
           </FormControl>
+          <TextField
+            margin="dense"
+            label="Display Order"
+            type="number"
+            fullWidth
+            value={newService.order || (
+              services
+                .filter(s => s.categoryId === newService.categoryId)
+                .length
+            )}
+            onChange={(e) =>
+              setNewService({ ...newService, order: parseInt(e.target.value) })
+            }
+            helperText="Lower numbers will be displayed first within their category"
+          />
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setOpen(false)}>Cancel</Button>

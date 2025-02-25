@@ -38,6 +38,7 @@ export default function Categories() {
   });
 
   const columns: GridColDef[] = [
+    { field: 'order', headerName: 'Order', flex: 0.5, minWidth: 70, type: 'number' },
     { field: 'name', headerName: 'Name', flex: 1, minWidth: 150 },
     { field: 'description', headerName: 'Description', flex: 2, minWidth: 200 },
     { field: 'active', headerName: 'Active', flex: 0.5, minWidth: 100, type: 'boolean' },
@@ -95,8 +96,11 @@ export default function Categories() {
           name: data.name || '',
           description: data.description || '',
           active: typeof data.active === 'boolean' ? data.active : true,
+          order: data.order || 0,
         };
       });
+      // Sort categories by order
+      categoriesData.sort((a, b) => a.order - b.order);
       setCategories(categoriesData);
     } catch (error) {
       console.error('Error fetching categories:', error);
@@ -106,16 +110,18 @@ export default function Categories() {
 
   const handleSubmit = async () => {
     try {
+      const categoryData = {
+        ...newCategory,
+        order: newCategory.order || categories.length,
+        updatedAt: new Date(),
+      };
+      
       if (newCategory.id) {
-        await updateDoc(doc(db, 'serviceCategories', newCategory.id), {
-          ...newCategory,
-          updatedAt: new Date(),
-        });
+        await updateDoc(doc(db, 'serviceCategories', newCategory.id), categoryData);
       } else {
         await addDoc(collection(db, 'serviceCategories'), {
-          ...newCategory,
+          ...categoryData,
           createdAt: new Date(),
-          updatedAt: new Date(),
         });
       }
       setOpen(false);
