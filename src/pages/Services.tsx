@@ -9,6 +9,8 @@ import {
   TextField,
   Typography,
   Paper,
+  useTheme,
+  useMediaQuery,
   FormControl,
   InputLabel,
   Select,
@@ -17,6 +19,7 @@ import {
 import { DataGrid, GridColDef } from '@mui/x-data-grid';
 import { collection, getDocs, addDoc, updateDoc, doc, deleteDoc } from 'firebase/firestore';
 import { db } from '../config/firebase';
+import ErrorAlert from '../components/ErrorAlert';
 
 interface Category {
   id: string;
@@ -32,8 +35,8 @@ interface Service {
   duration: number;
   price: number;
   categoryId: string;
+  categoryName: string;
   active: boolean;
-  category?: Category;
 }
 
 export default function Services() {
@@ -41,6 +44,7 @@ export default function Services() {
   const [categories, setCategories] = useState<Category[]>([]);
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string>('');
   const [newService, setNewService] = useState<Partial<Service>>({
     name: '',
     description: '',
@@ -51,21 +55,12 @@ export default function Services() {
   });
 
   const columns: GridColDef[] = [
-    { field: 'name', headerName: 'Name', width: 200 },
-    { field: 'description', headerName: 'Description', width: 300 },
-    { 
-      field: 'categoryName',
-      headerName: 'Category',
-      width: 150,
-      valueGetter: (params) => {
-        if (!params.row) return 'None';
-        const category = categories.find(c => c.id === params.row.categoryId);
-        return category?.name || 'None';
-      },
-    },
-    { field: 'duration', headerName: 'Duration (min)', width: 130, type: 'number' },
-    { field: 'price', headerName: 'Price', width: 130, type: 'number' },
-    { field: 'active', headerName: 'Active', width: 130, type: 'boolean' },
+    { field: 'name', headerName: 'Name', flex: 1, minWidth: 150 },
+    { field: 'description', headerName: 'Description', flex: 1.5, minWidth: 200 },
+    { field: 'categoryName', headerName: 'Category', flex: 1, minWidth: 120 },
+    { field: 'duration', headerName: 'Duration (min)', flex: 0.8, minWidth: 100, type: 'number' },
+    { field: 'price', headerName: 'Price', flex: 0.8, minWidth: 80, type: 'number' },
+    { field: 'active', headerName: 'Active', flex: 0.5, minWidth: 80, type: 'boolean' },
     {
       field: 'actions',
       headerName: 'Actions',
@@ -100,7 +95,7 @@ export default function Services() {
         await fetchCategories();
         await fetchServices();
       } catch (error) {
-        console.error('Error loading data:', error);
+        setError('Failed to load data. Please try refreshing the page.');
       } finally {
         setLoading(false);
       }
@@ -133,22 +128,21 @@ export default function Services() {
       const querySnapshot = await getDocs(collection(db, 'services'));
       const servicesData = querySnapshot.docs.map((doc) => {
         const data = doc.data();
+        const category = categories.find(c => c.id === data.categoryId);
         return {
           id: doc.id,
-          ...data,
-          // Ensure all required fields have default values
           name: data.name || '',
           description: data.description || '',
           duration: data.duration || 0,
           price: data.price || 0,
           categoryId: data.categoryId || '',
+          categoryName: category?.name || 'None',
           active: typeof data.active === 'boolean' ? data.active : true,
         };
-      }) as Service[];
+      });
       setServices(servicesData);
     } catch (error) {
       console.error('Error fetching services:', error);
-      // Set empty array on error to prevent undefined state
       setServices([]);
     }
   };
@@ -199,15 +193,22 @@ export default function Services() {
 
   return (
     <Box sx={{ height: 'calc(100vh - 100px)' }}>
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 2 }}>
+      <Box sx={{ display: 'flex', flexDirection: { xs: 'column', sm: 'row' }, justifyContent: 'space-between', alignItems: { xs: 'stretch', sm: 'center' }, gap: 2, mb: 2 }}>
         <Typography variant="h4">Services</Typography>
-        <Button variant="contained" onClick={() => setOpen(true)}>
+        <Button variant="contained" onClick={() => setOpen(true)} sx={{ width: { xs: '100%', sm: 'auto' } }}>
           Add Service
         </Button>
       </Box>
 
-      <Paper sx={{ height: 'calc(100% - 60px)' }}>
+      <Paper sx={{ height: 'calc(100% - 60px)', width: '100%', overflow: 'hidden' }}>
         <DataGrid
+          sx={{
+            '& .MuiDataGrid-cell': {
+              whiteSpace: 'normal',
+              lineHeight: 'normal',
+              padding: 1,
+            },
+          }}
           rows={services}
           columns={columns}
           initialState={{
@@ -222,6 +223,7 @@ export default function Services() {
       </Paper>
 
       <Dialog open={open} onClose={() => setOpen(false)} maxWidth="sm" fullWidth>
+        <Box component="form" onSubmit={(e) => { e.preventDefault(); handleSubmit(); }}>
         <DialogTitle>{newService.id ? 'Edit Service' : 'New Service'}</DialogTitle>
         <DialogContent>
           <TextField
@@ -283,7 +285,14 @@ export default function Services() {
             Save
           </Button>
         </DialogActions>
+        </Box>
       </Dialog>
+
+      <ErrorAlert
+        open={!!error}
+        message={error}
+        onClose={() => setError('')}
+      />
     </Box>
   );
 }

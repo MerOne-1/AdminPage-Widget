@@ -9,9 +9,12 @@ import {
   TextField,
   Typography,
   Paper,
+  useTheme,
+  useMediaQuery,
 } from '@mui/material';
 import { DataGrid, GridColDef } from '@mui/x-data-grid';
 import { collection, getDocs, addDoc, updateDoc, doc, deleteDoc } from 'firebase/firestore';
+import ErrorAlert from '../components/ErrorAlert';
 import { db } from '../config/firebase';
 
 interface Category {
@@ -27,6 +30,7 @@ export default function Categories() {
   const [categories, setCategories] = useState<Category[]>([]);
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string>('');
   const [newCategory, setNewCategory] = useState<Partial<Category>>({
     name: '',
     description: '',
@@ -34,33 +38,36 @@ export default function Categories() {
   });
 
   const columns: GridColDef[] = [
-    { field: 'name', headerName: 'Name', width: 200 },
-    { field: 'description', headerName: 'Description', width: 300 },
-    { field: 'active', headerName: 'Active', width: 130, type: 'boolean' },
+    { field: 'name', headerName: 'Name', flex: 1, minWidth: 150 },
+    { field: 'description', headerName: 'Description', flex: 2, minWidth: 200 },
+    { field: 'active', headerName: 'Active', flex: 0.5, minWidth: 100, type: 'boolean' },
     {
       field: 'actions',
       headerName: 'Actions',
       width: 200,
-      renderCell: (params) => (
-        <Box>
-          <Button
-            variant="outlined"
-            size="small"
-            onClick={() => handleEdit(params.row)}
-            sx={{ mr: 1 }}
-          >
-            Edit
-          </Button>
-          <Button
-            variant="outlined"
-            color="error"
-            size="small"
-            onClick={() => handleDelete(params.row.id)}
-          >
-            Delete
-          </Button>
-        </Box>
-      ),
+      renderCell: (params) => {
+        if (!params.row) return null;
+        return (
+          <Box>
+            <Button
+              variant="outlined"
+              size="small"
+              onClick={() => handleEdit(params.row)}
+              sx={{ mr: 1 }}
+            >
+              Edit
+            </Button>
+            <Button
+              variant="outlined"
+              color="error"
+              size="small"
+              onClick={() => handleDelete(params.row.id)}
+            >
+              Delete
+            </Button>
+          </Box>
+        );
+      },
     },
   ];
 
@@ -81,13 +88,19 @@ export default function Categories() {
   const fetchCategories = async () => {
     try {
       const querySnapshot = await getDocs(collection(db, 'serviceCategories'));
-      const categoriesData = querySnapshot.docs.map((doc) => ({
-        id: doc.id,
-        ...doc.data(),
-      })) as Category[];
+      const categoriesData = querySnapshot.docs.map((doc) => {
+        const data = doc.data();
+        return {
+          id: doc.id,
+          name: data.name || '',
+          description: data.description || '',
+          active: typeof data.active === 'boolean' ? data.active : true,
+        };
+      });
       setCategories(categoriesData);
     } catch (error) {
       console.error('Error fetching categories:', error);
+      setCategories([]);
     }
   };
 
@@ -135,15 +148,22 @@ export default function Categories() {
 
   return (
     <Box sx={{ height: 'calc(100vh - 100px)' }}>
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 2 }}>
+      <Box sx={{ display: 'flex', flexDirection: { xs: 'column', sm: 'row' }, justifyContent: 'space-between', alignItems: { xs: 'stretch', sm: 'center' }, gap: 2, mb: 2 }}>
         <Typography variant="h4">Service Categories</Typography>
-        <Button variant="contained" onClick={() => setOpen(true)}>
+        <Button variant="contained" onClick={() => setOpen(true)} sx={{ width: { xs: '100%', sm: 'auto' } }}>
           Add Category
         </Button>
       </Box>
 
-      <Paper sx={{ height: 'calc(100% - 60px)' }}>
+      <Paper sx={{ height: 'calc(100% - 60px)', width: '100%', overflow: 'hidden' }}>
         <DataGrid
+          sx={{
+            '& .MuiDataGrid-cell': {
+              whiteSpace: 'normal',
+              lineHeight: 'normal',
+              padding: 1,
+            },
+          }}
           rows={categories}
           columns={columns}
           initialState={{
@@ -158,6 +178,7 @@ export default function Categories() {
       </Paper>
 
       <Dialog open={open} onClose={() => setOpen(false)} maxWidth="sm" fullWidth>
+        <Box component="form" onSubmit={(e) => { e.preventDefault(); handleSubmit(); }}>
         <DialogTitle>{newCategory.id ? 'Edit Category' : 'New Category'}</DialogTitle>
         <DialogContent>
           <TextField
@@ -184,7 +205,14 @@ export default function Categories() {
             Save
           </Button>
         </DialogActions>
+        </Box>
       </Dialog>
+
+      <ErrorAlert
+        open={!!error}
+        message={error}
+        onClose={() => setError('')}
+      />
     </Box>
   );
 }
