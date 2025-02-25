@@ -247,8 +247,7 @@ export default function Settings() {
             fullWidth
             multiline
             rows={3}
-            value={\`<script src="https://your-widget-url.com/widget.js"></script>
-<div id="booking-widget" data-business-id="your-business-id"></div>\`}
+            value={'<script src="https://your-widget-url.com/widget.js"></script>\n<div id="booking-widget" data-business-id="your-business-id"></div>'}
             InputProps={{
               readOnly: true,
             }}
