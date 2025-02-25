@@ -53,10 +53,13 @@ export default function Services() {
     { field: 'name', headerName: 'Name', width: 200 },
     { field: 'description', headerName: 'Description', width: 300 },
     { 
-      field: 'category',
+      field: 'categoryName',
       headerName: 'Category',
       width: 150,
-      valueGetter: (params) => params.row.category?.name || 'None',
+      valueGetter: (params) => {
+        const category = categories.find(c => c.id === params.row.categoryId);
+        return category?.name || 'None';
+      },
     },
     { field: 'duration', headerName: 'Duration (min)', width: 130, type: 'number' },
     { field: 'price', headerName: 'Price', width: 130, type: 'number' },
@@ -125,11 +128,9 @@ export default function Services() {
       const querySnapshot = await getDocs(collection(db, 'services'));
       const servicesData = querySnapshot.docs.map((doc) => {
         const data = doc.data();
-        const category = categories.find(c => c.id === data.categoryId);
         return {
           id: doc.id,
           ...data,
-          category,
           // Ensure all required fields have default values
           name: data.name || '',
           description: data.description || '',
