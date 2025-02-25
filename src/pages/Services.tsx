@@ -40,6 +40,7 @@ export default function Services() {
   const [services, setServices] = useState<Service[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [open, setOpen] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [newService, setNewService] = useState<Partial<Service>>({
     name: '',
     description: '',
@@ -57,6 +58,7 @@ export default function Services() {
       headerName: 'Category',
       width: 150,
       valueGetter: (params) => {
+        if (!params.row) return 'None';
         const category = categories.find(c => c.id === params.row.categoryId);
         return category?.name || 'None';
       },
@@ -93,11 +95,14 @@ export default function Services() {
 
   useEffect(() => {
     const loadData = async () => {
+      setLoading(true);
       try {
         await fetchCategories();
         await fetchServices();
       } catch (error) {
         console.error('Error loading data:', error);
+      } finally {
+        setLoading(false);
       }
     };
     loadData();
@@ -211,6 +216,8 @@ export default function Services() {
             },
           }}
           pageSizeOptions={[5, 10]}
+          loading={loading}
+          getRowId={(row) => row.id || Math.random()}
         />
       </Paper>
 

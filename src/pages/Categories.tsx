@@ -26,6 +26,7 @@ interface Category {
 export default function Categories() {
   const [categories, setCategories] = useState<Category[]>([]);
   const [open, setOpen] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [newCategory, setNewCategory] = useState<Partial<Category>>({
     name: '',
     description: '',
@@ -64,7 +65,17 @@ export default function Categories() {
   ];
 
   useEffect(() => {
-    fetchCategories();
+    const loadData = async () => {
+      setLoading(true);
+      try {
+        await fetchCategories();
+      } catch (error) {
+        console.error('Error loading categories:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    loadData();
   }, []);
 
   const fetchCategories = async () => {
@@ -141,6 +152,8 @@ export default function Categories() {
             },
           }}
           pageSizeOptions={[5, 10]}
+          loading={loading}
+          getRowId={(row) => row.id || Math.random()}
         />
       </Paper>
 
