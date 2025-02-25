@@ -89,9 +89,23 @@ export default function Services() {
   ];
 
   useEffect(() => {
-    fetchCategories();
-    fetchServices();
+    const loadData = async () => {
+      try {
+        await fetchCategories();
+        await fetchServices();
+      } catch (error) {
+        console.error('Error loading data:', error);
+      }
+    };
+    loadData();
   }, []);
+
+  // Refetch services when categories change to ensure proper linking
+  useEffect(() => {
+    if (categories.length > 0) {
+      fetchServices();
+    }
+  }, [categories]);
 
   const fetchCategories = async () => {
     try {
@@ -116,11 +130,20 @@ export default function Services() {
           id: doc.id,
           ...data,
           category,
+          // Ensure all required fields have default values
+          name: data.name || '',
+          description: data.description || '',
+          duration: data.duration || 0,
+          price: data.price || 0,
+          categoryId: data.categoryId || '',
+          active: typeof data.active === 'boolean' ? data.active : true,
         };
       }) as Service[];
       setServices(servicesData);
     } catch (error) {
       console.error('Error fetching services:', error);
+      // Set empty array on error to prevent undefined state
+      setServices([]);
     }
   };
 

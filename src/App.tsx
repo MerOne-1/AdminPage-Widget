@@ -7,6 +7,7 @@ import Dashboard from './pages/Dashboard';
 import Services from './pages/Services';
 import Categories from './pages/Categories';
 import Settings from './pages/Settings';
+import ErrorBoundary from './components/ErrorBoundary';
 
 const theme = createTheme({
   palette: {
@@ -24,8 +25,9 @@ function App() {
   return (
     <ThemeProvider theme={theme}>
       <CssBaseline />
-      <Router>
-        <Routes>
+      <ErrorBoundary>
+        <Router>
+          <Routes>
           <Route path="/" element={<Layout />}>
             <Route index element={<Dashboard />} />
             <Route path="categories" element={<Categories />} />
@@ -34,8 +36,9 @@ function App() {
             <Route path="schedule" element={<div>Schedule Management</div>} />
             <Route path="settings" element={<Settings />} />
           </Route>
-        </Routes>
-      </Router>
+          </Routes>
+        </Router>
+      </ErrorBoundary>
     </ThemeProvider>
   );
 }
