@@ -423,10 +423,7 @@ export default function Staff() {
                         <CheckBoxIcon color="primary" fontSize="small" /> : 
                         <CheckBoxOutlineBlankIcon fontSize="small" />
                       }
-                      <Box sx={{ flex: 1 }}>{service.name}</Box>
-                      <Typography variant="caption" color="text.secondary">
-                        {service.duration}min - ${service.price}
-                      </Typography>
+                      <Box>{service.name}</Box>
                     </MenuItem>
                   ))}
               </Select>
