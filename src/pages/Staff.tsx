@@ -325,16 +325,7 @@ export default function Staff() {
   };
 
   const handleScheduleClick = (employee: Employee) => {
-    // Get a validated schedule with all required fields
-    const schedule = getEmployeeSchedule(employee);
-    
-    // Update the employee with the validated schedule
-    const updatedEmployee = {
-      ...employee,
-      schedule,
-    };
-    
-    setSelectedEmployee(updatedEmployee);
+    setSelectedEmployee(employee);
     setScheduleDialogOpen(true);
   };
 
@@ -552,11 +543,14 @@ export default function Staff() {
             sunday: { isWorking: false, timeSlots: [] },
           },
           exceptions: [],
-        }}
+        }
         onSave={async (newSchedule) => {
           if (selectedEmployee) {
             try {
-              await updateEmployeeSchedule(selectedEmployee.id, newSchedule);
+              await updateDoc(doc(db, 'employees', selectedEmployee.id), {
+                schedule: newSchedule,
+                updatedAt: new Date(),
+              });
               
               setEmployees(employees.map(emp => 
                 emp.id === selectedEmployee.id 

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import {
   Box,
   Paper,
@@ -20,6 +20,7 @@ import {
 } from '@mui/material';
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import { addDays } from 'date-fns';
+import { createException, addException, removeException, getDefaultException } from '../utils/exceptionUtils';
 import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import AddIcon from '@mui/icons-material/Add';
@@ -43,11 +44,25 @@ export default function ScheduleEditor({ open, onClose, employeeName, schedule, 
   const [tab, setTab] = useState(0);
   const [selectedDays, setSelectedDays] = useState<string[]>([]);
   const [editingSchedule, setEditingSchedule] = useState<EmployeeSchedule>(schedule);
-  const [newException, setNewException] = useState<Partial<Exception>>({
-    type: 'holiday',
-    startDate: new Date().toISOString(),
-    endDate: new Date().toISOString(),
-  });
+
+  // Update editingSchedule when schedule prop changes
+  useEffect(() => {
+    // Ensure schedule has all required fields
+    const validSchedule: EmployeeSchedule = {
+      weeklySchedule: {
+        monday: { isWorking: true, timeSlots: [{ start: '09:00', end: '17:00' }], ...schedule.weeklySchedule?.monday },
+        tuesday: { isWorking: true, timeSlots: [{ start: '09:00', end: '17:00' }], ...schedule.weeklySchedule?.tuesday },
+        wednesday: { isWorking: true, timeSlots: [{ start: '09:00', end: '17:00' }], ...schedule.weeklySchedule?.wednesday },
+        thursday: { isWorking: true, timeSlots: [{ start: '09:00', end: '17:00' }], ...schedule.weeklySchedule?.thursday },
+        friday: { isWorking: true, timeSlots: [{ start: '09:00', end: '17:00' }], ...schedule.weeklySchedule?.friday },
+        saturday: { isWorking: false, timeSlots: [], ...schedule.weeklySchedule?.saturday },
+        sunday: { isWorking: false, timeSlots: [], ...schedule.weeklySchedule?.sunday },
+      },
+      exceptions: Array.isArray(schedule.exceptions) ? schedule.exceptions : [],
+    };
+    setEditingSchedule(validSchedule);
+  }, [schedule]);
+  const [newException, setNewException] = useState<Exception>(getDefaultException());
   const [showExceptionDialog, setShowExceptionDialog] = useState(false);
 
   const handleAddTimeSlot = (day: string) => {
@@ -114,35 +129,21 @@ export default function ScheduleEditor({ open, onClose, employeeName, schedule, 
   };
 
   const handleAddException = () => {
-    if (newException.startDate && newException.endDate && newException.type) {
-      const exception: Exception = {
-        id: Math.random().toString(36).substr(2, 9),
-        startDate: newException.startDate,
-        endDate: newException.endDate,
-        type: newException.type,
-        note: newException.note,
-        timeSlots: newException.timeSlots,
-      };
+    const exception = createException(
+      newException.startDate,
+      newException.endDate,
+      newException.type,
+      newException.note,
+      newException.timeSlots
+    );
 
-      setEditingSchedule({
-        ...editingSchedule,
-        exceptions: [...editingSchedule.exceptions, exception],
-      });
-
-      setNewException({
-        type: 'holiday',
-        startDate: new Date().toISOString(),
-        endDate: addDays(new Date(), 1).toISOString(),
-      });
-      setShowExceptionDialog(false);
-    }
+    setEditingSchedule(prev => addException(prev, exception));
+    setNewException(getDefaultException());
+    setShowExceptionDialog(false);
   };
 
   const handleRemoveException = (id: string) => {
-    setEditingSchedule({
-      ...editingSchedule,
-      exceptions: editingSchedule.exceptions.filter(e => e.id !== id),
-    });
+    setEditingSchedule(prev => removeException(prev, id));
   };
 
   return (

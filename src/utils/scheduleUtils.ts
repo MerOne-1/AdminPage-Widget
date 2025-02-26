@@ -15,19 +15,34 @@ const DEFAULT_SCHEDULE: EmployeeSchedule = {
   exceptions: [],
 };
 
-export const getEmployeeSchedule = (employeeData: any): EmployeeSchedule => {
-  if (!employeeData) return DEFAULT_SCHEDULE;
+export const getEmployeeSchedule = (employeeData: any | null): EmployeeSchedule | null => {
+  if (!employeeData) return null;
   
-  const schedule = employeeData.schedule || {};
+  const schedule = employeeData.schedule || DEFAULT_SCHEDULE;
   
-  // Ensure all days are present in weeklySchedule
-  const weeklySchedule = {
-    ...DEFAULT_SCHEDULE.weeklySchedule,
-    ...(schedule.weeklySchedule || {})
-  };
+  // Ensure all days are present in weeklySchedule with correct structure
+  const weeklySchedule = Object.fromEntries(
+    Object.entries(DEFAULT_SCHEDULE.weeklySchedule).map(([day, defaultValue]) => [
+      day,
+      {
+        isWorking: schedule.weeklySchedule?.[day]?.isWorking ?? defaultValue.isWorking,
+        timeSlots: Array.isArray(schedule.weeklySchedule?.[day]?.timeSlots)
+          ? schedule.weeklySchedule[day].timeSlots
+          : defaultValue.timeSlots
+      }
+    ])
+  );
   
   // Ensure exceptions array exists and is valid
-  const exceptions = Array.isArray(schedule.exceptions) ? schedule.exceptions : [];
+  const exceptions = Array.isArray(schedule.exceptions) 
+    ? schedule.exceptions.map(exception => ({
+        ...exception,
+        startDate: exception.startDate || new Date().toISOString(),
+        endDate: exception.endDate || new Date().toISOString(),
+        type: exception.type || 'holiday',
+        timeSlots: Array.isArray(exception.timeSlots) ? exception.timeSlots : []
+      }))
+    : [];
   
   return {
     weeklySchedule,
