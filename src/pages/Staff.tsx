@@ -31,6 +31,7 @@ import {
 } from '@mui/material';
 import { DataGrid, GridColDef } from '@mui/x-data-grid';
 import { collection, getDocs, addDoc, updateDoc, doc, deleteDoc } from 'firebase/firestore';
+import { getEmployeeSchedule, getWorkingDaysCount, getExceptionsCount, updateEmployeeSchedule } from '../utils/scheduleUtils';
 import ErrorAlert from '../components/ErrorAlert';
 import { db } from '../config/firebase';
 
@@ -134,24 +135,28 @@ export default function Staff() {
     {
       field: 'schedule',
       headerName: 'Schedule',
-      width: 120,
+      width: 200,
       renderCell: (params) => {
-        const schedule = params.value || {};
-        const hasSchedule = Object.keys(schedule).length > 0;
+        const schedule = params.value ? getEmployeeSchedule(params.row) : undefined;
+        const workingDays = getWorkingDaysCount(schedule);
+        const exceptions = getExceptionsCount(schedule);
+        
         return (
           <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
-            <Chip
-              label={hasSchedule ? 'Set' : 'Not set'}
-              size="small"
-              color={hasSchedule ? 'success' : 'default'}
-              variant="outlined"
-            />
+            <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start' }}>
+              <Typography variant="body2">
+                {workingDays} working days
+              </Typography>
+              {exceptions > 0 && (
+                <Typography variant="caption" color="text.secondary">
+                  {exceptions} exception{exceptions !== 1 ? 's' : ''}
+                </Typography>
+              )}
+            </Box>
             <IconButton
               size="small"
-              onClick={() => {
-                setSelectedEmployee(params.row);
-                setScheduleDialogOpen(true);
-              }}
+              onClick={() => handleScheduleClick(params.row)}
+              sx={{ ml: 'auto' }}
             >
               <AccessTimeIcon fontSize="small" />
             </IconButton>
@@ -320,7 +325,16 @@ export default function Staff() {
   };
 
   const handleScheduleClick = (employee: Employee) => {
-    setSelectedEmployee(employee);
+    // Get a validated schedule with all required fields
+    const schedule = getEmployeeSchedule(employee);
+    
+    // Update the employee with the validated schedule
+    const updatedEmployee = {
+      ...employee,
+      schedule,
+    };
+    
+    setSelectedEmployee(updatedEmployee);
     setScheduleDialogOpen(true);
   };
 
@@ -542,10 +556,7 @@ export default function Staff() {
         onSave={async (newSchedule) => {
           if (selectedEmployee) {
             try {
-              await updateDoc(doc(db, 'employees', selectedEmployee.id), {
-                schedule: newSchedule,
-                updatedAt: new Date(),
-              });
+              await updateEmployeeSchedule(selectedEmployee.id, newSchedule);
               
               setEmployees(employees.map(emp => 
                 emp.id === selectedEmployee.id 
