@@ -4,6 +4,9 @@ import DeleteIcon from '@mui/icons-material/Delete';
 import PersonAddIcon from '@mui/icons-material/PersonAdd';
 import CheckBoxIcon from '@mui/icons-material/CheckBox';
 import CheckBoxOutlineBlankIcon from '@mui/icons-material/CheckBoxOutlineBlank';
+import AccessTimeIcon from '@mui/icons-material/AccessTime';
+import ContentCopyIcon from '@mui/icons-material/ContentCopy';
+import ScheduleEditor from '../components/ScheduleEditor.tsx';
 import {
   Box,
   Button,
@@ -40,15 +43,15 @@ interface Service {
   active: boolean;
 }
 
+import { EmployeeSchedule } from '../types/schedule';
+
 interface Employee {
   id: string;
   name: string;
   role: string;
   active: boolean;
   services: string[];
-  schedule: {
-    [key: string]: { start: string; end: string };
-  };
+  schedule: EmployeeSchedule;
   createdAt: any;
   updatedAt: any;
 }
@@ -67,10 +70,24 @@ export default function Staff() {
     role: '',
     active: true,
     services: [],
+    schedule: {
+      weeklySchedule: {
+        monday: { isWorking: true, timeSlots: [{ start: '09:00', end: '17:00' }] },
+        tuesday: { isWorking: true, timeSlots: [{ start: '09:00', end: '17:00' }] },
+        wednesday: { isWorking: true, timeSlots: [{ start: '09:00', end: '17:00' }] },
+        thursday: { isWorking: true, timeSlots: [{ start: '09:00', end: '17:00' }] },
+        friday: { isWorking: true, timeSlots: [{ start: '09:00', end: '17:00' }] },
+        saturday: { isWorking: false, timeSlots: [] },
+        sunday: { isWorking: false, timeSlots: [] },
+      },
+      exceptions: [],
+    },
   });
   const [isEditing, setIsEditing] = useState(false);
   const [serviceDialogOpen, setServiceDialogOpen] = useState(false);
   const [selectedEmployee, setSelectedEmployee] = useState<Employee | null>(null);
+  const [scheduleDialogOpen, setScheduleDialogOpen] = useState(false);
+
 
   const columns: GridColDef[] = [
     { field: 'name', headerName: 'Name', flex: 1, minWidth: 150 },
@@ -115,9 +132,37 @@ export default function Staff() {
       },
     },
     {
+      field: 'schedule',
+      headerName: 'Schedule',
+      width: 120,
+      renderCell: (params) => {
+        const schedule = params.value || {};
+        const hasSchedule = Object.keys(schedule).length > 0;
+        return (
+          <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
+            <Chip
+              label={hasSchedule ? 'Set' : 'Not set'}
+              size="small"
+              color={hasSchedule ? 'success' : 'default'}
+              variant="outlined"
+            />
+            <IconButton
+              size="small"
+              onClick={() => {
+                setSelectedEmployee(params.row);
+                setScheduleDialogOpen(true);
+              }}
+            >
+              <AccessTimeIcon fontSize="small" />
+            </IconButton>
+          </Box>
+        );
+      },
+    },
+    {
       field: 'actions',
       headerName: 'Actions',
-      width: 200,
+      width: 100,
       sortable: false,
       renderCell: (params) => (
         <Box sx={{ display: 'flex', gap: 1 }}>
@@ -252,6 +297,31 @@ export default function Staff() {
       console.error('Error updating employee services:', error);
       setError('Failed to update employee services');
     }
+  };
+
+  const handleScheduleUpdate = async (newSchedule: EmployeeSchedule) => {
+    if (!selectedEmployee) return;
+
+    try {
+      await updateDoc(doc(db, 'employees', selectedEmployee.id), {
+        schedule: newSchedule,
+        updatedAt: new Date(),
+      });
+
+      setEmployees(employees.map(emp => 
+        emp.id === selectedEmployee.id ? { ...emp, schedule: newSchedule } : emp
+      ));
+      setScheduleDialogOpen(false);
+      setSelectedEmployee(null);
+    } catch (error) {
+      console.error('Error updating employee schedule:', error);
+      setError('Failed to update employee schedule');
+    }
+  };
+
+  const handleScheduleClick = (employee: Employee) => {
+    setSelectedEmployee(employee);
+    setScheduleDialogOpen(true);
   };
 
   return (
@@ -449,6 +519,48 @@ export default function Staff() {
           </Button>
         </DialogActions>
       </Dialog>
+
+      <ScheduleEditor
+        open={scheduleDialogOpen}
+        onClose={() => {
+          setScheduleDialogOpen(false);
+          setSelectedEmployee(null);
+        }}
+        employeeName={selectedEmployee?.name || ''}
+        schedule={selectedEmployee?.schedule || {
+          weeklySchedule: {
+            monday: { isWorking: true, timeSlots: [{ start: '09:00', end: '17:00' }] },
+            tuesday: { isWorking: true, timeSlots: [{ start: '09:00', end: '17:00' }] },
+            wednesday: { isWorking: true, timeSlots: [{ start: '09:00', end: '17:00' }] },
+            thursday: { isWorking: true, timeSlots: [{ start: '09:00', end: '17:00' }] },
+            friday: { isWorking: true, timeSlots: [{ start: '09:00', end: '17:00' }] },
+            saturday: { isWorking: false, timeSlots: [] },
+            sunday: { isWorking: false, timeSlots: [] },
+          },
+          exceptions: [],
+        }}
+        onSave={async (newSchedule) => {
+          if (selectedEmployee) {
+            try {
+              await updateDoc(doc(db, 'employees', selectedEmployee.id), {
+                schedule: newSchedule,
+                updatedAt: new Date(),
+              });
+              
+              setEmployees(employees.map(emp => 
+                emp.id === selectedEmployee.id 
+                  ? { ...selectedEmployee, schedule: newSchedule }
+                  : emp
+              ));
+              setScheduleDialogOpen(false);
+              setSelectedEmployee(null);
+            } catch (error) {
+              console.error('Error updating employee schedule:', error);
+              setError('Failed to update employee schedule');
+            }
+          }
+        }}
+      />
     </Box>
   );
 }

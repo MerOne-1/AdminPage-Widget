@@ -2,6 +2,8 @@ import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { ThemeProvider, createTheme } from '@mui/material/styles';
 import CssBaseline from '@mui/material/CssBaseline';
 import { useEffect } from 'react';
+import { LocalizationProvider } from '@mui/x-date-pickers';
+import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
 import { initializeCollections } from './utils/initializeFirestore';
 
 import Layout from './components/Layout';
@@ -33,8 +35,9 @@ function App() {
   return (
     <ThemeProvider theme={theme}>
       <CssBaseline />
-      <ErrorBoundary>
-        <Router>
+      <LocalizationProvider dateAdapter={AdapterDateFns}>
+        <ErrorBoundary>
+          <Router>
           <Routes>
           <Route path="/" element={<Layout />}>
             <Route index element={<Dashboard />} />
@@ -45,8 +48,9 @@ function App() {
             <Route path="settings" element={<Settings />} />
           </Route>
           </Routes>
-        </Router>
-      </ErrorBoundary>
+          </Router>
+        </ErrorBoundary>
+      </LocalizationProvider>
     </ThemeProvider>
   );
 }
