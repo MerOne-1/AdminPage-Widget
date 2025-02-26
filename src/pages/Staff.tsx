@@ -2,6 +2,8 @@ import { useState, useEffect } from 'react';
 import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
 import PersonAddIcon from '@mui/icons-material/PersonAdd';
+import CheckBoxIcon from '@mui/icons-material/CheckBox';
+import CheckBoxOutlineBlankIcon from '@mui/icons-material/CheckBoxOutlineBlank';
 import {
   Box,
   Button,
@@ -413,12 +415,16 @@ export default function Staff() {
                       value={service.id}
                       sx={{
                         display: 'flex',
-                        justifyContent: 'space-between',
-                        gap: 1
+                        alignItems: 'center',
+                        gap: 1,
                       }}
                     >
-                      <span>{service.name}</span>
-                      <Typography variant="caption" color="textSecondary">
+                      {selectedEmployee?.services?.includes(service.id) ? 
+                        <CheckBoxIcon color="primary" fontSize="small" /> : 
+                        <CheckBoxOutlineBlankIcon fontSize="small" />
+                      }
+                      <Box sx={{ flex: 1 }}>{service.name}</Box>
+                      <Typography variant="caption" color="text.secondary">
                         {service.duration}min - ${service.price}
                       </Typography>
                     </MenuItem>
