@@ -14,7 +14,8 @@ export interface WeeklySchedule {
 
 export interface Exception {
   id: string;
-  date: string;  // ISO date string
+  startDate: string;  // ISO date string
+  endDate: string;   // ISO date string
   type: 'holiday' | 'modified';
   timeSlots?: TimeSlot[];  // only for modified type
   note?: string;

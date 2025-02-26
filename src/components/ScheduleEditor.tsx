@@ -19,6 +19,7 @@ import {
   Divider,
 } from '@mui/material';
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
+import { addDays } from 'date-fns';
 import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import AddIcon from '@mui/icons-material/Add';
@@ -44,7 +45,8 @@ export default function ScheduleEditor({ open, onClose, employeeName, schedule, 
   const [editingSchedule, setEditingSchedule] = useState<EmployeeSchedule>(schedule);
   const [newException, setNewException] = useState<Partial<Exception>>({
     type: 'holiday',
-    date: new Date().toISOString(),
+    startDate: new Date().toISOString(),
+    endDate: new Date().toISOString(),
   });
   const [showExceptionDialog, setShowExceptionDialog] = useState(false);
 
@@ -112,10 +114,11 @@ export default function ScheduleEditor({ open, onClose, employeeName, schedule, 
   };
 
   const handleAddException = () => {
-    if (newException.date && newException.type) {
+    if (newException.startDate && newException.endDate && newException.type) {
       const exception: Exception = {
         id: Math.random().toString(36).substr(2, 9),
-        date: newException.date,
+        startDate: newException.startDate,
+        endDate: newException.endDate,
         type: newException.type,
         note: newException.note,
         timeSlots: newException.timeSlots,
@@ -128,7 +131,8 @@ export default function ScheduleEditor({ open, onClose, employeeName, schedule, 
 
       setNewException({
         type: 'holiday',
-        date: new Date().toISOString(),
+        startDate: new Date().toISOString(),
+        endDate: addDays(new Date(), 1).toISOString(),
       });
       setShowExceptionDialog(false);
     }
@@ -275,13 +279,13 @@ export default function ScheduleEditor({ open, onClose, employeeName, schedule, 
 
             <Stack spacing={2}>
               {editingSchedule.exceptions
-                .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
+                .sort((a, b) => new Date(a.startDate).getTime() - new Date(b.startDate).getTime())
                 .map(exception => (
                   <Paper key={exception.id} sx={{ p: 2 }}>
                     <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                       <Box>
                         <Typography variant="subtitle1">
-                          {format(parseISO(exception.date), 'PP')}
+                          {format(parseISO(exception.startDate), 'PP')} - {format(parseISO(exception.endDate), 'PP')}
                         </Typography>
                         <Chip
                           size="small"
@@ -334,18 +338,36 @@ export default function ScheduleEditor({ open, onClose, employeeName, schedule, 
           <DialogContent>
             <Box sx={{ pt: 2, display: 'flex', flexDirection: 'column', gap: 2 }}>
               <LocalizationProvider dateAdapter={AdapterDateFns}>
-                <DatePicker
-                  label="Date"
-                  value={parseISO(newException.date || new Date().toISOString())}
-                  onChange={(date) => {
-                    if (date) {
-                      setNewException({
-                        ...newException,
-                        date: date.toISOString(),
-                      });
-                    }
-                  }}
-                />
+                <Box sx={{ display: 'flex', gap: 2 }}>
+                  <DatePicker
+                    label="Start Date"
+                    value={parseISO(newException.startDate || new Date().toISOString())}
+                    onChange={(date) => {
+                      if (date) {
+                        const endDate = parseISO(newException.endDate || new Date().toISOString());
+                        setNewException({
+                          ...newException,
+                          startDate: date.toISOString(),
+                          // If end date is before start date, set it to start date
+                          endDate: endDate < date ? date.toISOString() : newException.endDate,
+                        });
+                      }
+                    }}
+                  />
+                  <DatePicker
+                    label="End Date"
+                    value={parseISO(newException.endDate || new Date().toISOString())}
+                    minDate={parseISO(newException.startDate || new Date().toISOString())}
+                    onChange={(date) => {
+                      if (date) {
+                        setNewException({
+                          ...newException,
+                          endDate: date.toISOString(),
+                        });
+                      }
+                    }}
+                  />
+                </Box>
               </LocalizationProvider>
 
               <FormControlLabel
