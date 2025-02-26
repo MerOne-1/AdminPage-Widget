@@ -13,17 +13,40 @@ import { collection, query, orderBy, getDocs, onSnapshot, Timestamp } from 'fire
 import { db } from '../config/firebase';
 import { format } from 'date-fns';
 
+interface BookingService {
+  id: string;
+  name: string;
+  duration: number;
+  price: number;
+}
+
+interface TimeSlot {
+  start: string;
+  end: string;
+}
+
+interface ClientInfo {
+  firstName: string;
+  lastName: string;
+  email: string;
+  phone: string;
+  address: string;
+  comments?: string;
+}
+
 interface Booking {
   id: string;
-  clientName: string;
-  clientEmail: string;
-  clientPhone: string;
-  serviceId: string;
+  services: BookingService[];
   employeeId: string;
+  employeeName: string;
+  clientInfo: ClientInfo;
   date: string;
-  time: string;
+  timeSlot: TimeSlot;
+  totalDuration: number;
+  totalPrice: number;
   status: 'pending' | 'confirmed' | 'cancelled';
   createdAt: Timestamp;
+  updatedAt: Timestamp;
 }
 
 interface DashboardStats {
@@ -41,9 +64,52 @@ export default function Dashboard() {
   });
 
   const columns: GridColDef[] = [
-    { field: 'clientName', headerName: 'Client Name', width: 150 },
-    { field: 'clientEmail', headerName: 'Email', width: 200 },
-    { field: 'clientPhone', headerName: 'Phone', width: 130 },
+    { 
+      field: 'clientName', 
+      headerName: 'Client Name', 
+      width: 150,
+      valueGetter: (params) => `${params.row.clientInfo.firstName} ${params.row.clientInfo.lastName}`,
+    },
+    { 
+      field: 'clientEmail', 
+      headerName: 'Email', 
+      width: 200,
+      valueGetter: (params) => params.row.clientInfo.email,
+    },
+    { 
+      field: 'clientPhone', 
+      headerName: 'Phone', 
+      width: 130,
+      valueGetter: (params) => params.row.clientInfo.phone,
+    },
+    { 
+      field: 'clientAddress', 
+      headerName: 'Address', 
+      width: 200,
+      valueGetter: (params) => params.row.clientInfo.address,
+    },
+    {
+      field: 'services',
+      headerName: 'Services',
+      width: 250,
+      renderCell: (params) => (
+        <Box>
+          {params.value?.map((service: BookingService, index: number) => (
+            <Chip
+              key={service.id}
+              label={service.name}
+              size="small"
+              sx={{ mr: 0.5, mb: 0.5 }}
+            />
+          )) || 'No services'}
+        </Box>
+      ),
+    },
+    {
+      field: 'employeeName',
+      headerName: 'Professional',
+      width: 150,
+    },
     { 
       field: 'date',
       headerName: 'Date',
@@ -57,7 +123,24 @@ export default function Dashboard() {
         }
       },
     },
-    { field: 'time', headerName: 'Time', width: 100 },
+    { 
+      field: 'time',
+      headerName: 'Time',
+      width: 150,
+      valueGetter: (params) => `${params.row.timeSlot.start} - ${params.row.timeSlot.end}`,
+    },
+    {
+      field: 'totalDuration',
+      headerName: 'Duration',
+      width: 100,
+      valueFormatter: (params) => `${params.value} min`,
+    },
+    {
+      field: 'totalPrice',
+      headerName: 'Price',
+      width: 100,
+      valueFormatter: (params) => `$${params.value}`,
+    },
     {
       field: 'status',
       headerName: 'Status',
@@ -84,10 +167,27 @@ export default function Dashboard() {
     const unsubscribe = onSnapshot(q, (snapshot) => {
       const bookingsData = snapshot.docs.map((doc) => {
         const data = doc.data();
+        // Ensure we have default values for potentially missing fields
         return {
           id: doc.id,
-          ...data,
+          services: data.services || [],
+          employeeId: data.employeeId || '',
+          employeeName: data.employeeName || 'No asignado',
+          clientInfo: {
+            firstName: (data.clientInfo?.firstName || data.clientName?.split(' ')[0] || ''),
+            lastName: (data.clientInfo?.lastName || data.clientName?.split(' ')[1] || ''),
+            email: data.clientInfo?.email || data.clientEmail || '',
+            phone: data.clientInfo?.phone || data.clientPhone || '',
+            address: data.clientInfo?.address || '',
+            comments: data.clientInfo?.comments || ''
+          },
+          date: data.date || '',
+          timeSlot: data.timeSlot || { start: data.time || '', end: '' },
+          totalDuration: data.totalDuration || data.duration || 0,
+          totalPrice: data.totalPrice || 0,
+          status: data.status || 'pending',
           createdAt: data.createdAt instanceof Timestamp ? data.createdAt.toDate() : new Date(),
+          updatedAt: data.updatedAt instanceof Timestamp ? data.updatedAt.toDate() : new Date(),
         };
       }) as Booking[];
       setBookings(bookingsData);

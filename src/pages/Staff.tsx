@@ -543,7 +543,7 @@ export default function Staff() {
             sunday: { isWorking: false, timeSlots: [] },
           },
           exceptions: [],
-        }
+        }}
         onSave={async (newSchedule) => {
           if (selectedEmployee) {
             try {
