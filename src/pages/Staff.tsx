@@ -88,30 +88,26 @@ export default function Staff() {
     {
       field: 'services',
       headerName: 'Services',
-      flex: 1.5,
-      minWidth: 200,
+      width: 150,
       renderCell: (params) => {
-        const employeeServices = services.filter(s => params.value.includes(s.id));
+        const serviceCount = params.value?.length || 0;
         return (
-          <Box sx={{ display: 'flex', gap: 0.5, flexWrap: 'wrap' }}>
-            {employeeServices.map(service => (
-              <Chip
-                key={service.id}
-                label={service.name}
-                size="small"
-                color="primary"
-                variant="outlined"
-              />
-            ))}
-            <Button
+          <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
+            <Chip
+              label={`${serviceCount} service${serviceCount !== 1 ? 's' : ''}`}
+              size="small"
+              color="primary"
+              variant="outlined"
+            />
+            <IconButton
               size="small"
               onClick={() => {
                 setSelectedEmployee(params.row);
                 setServiceDialogOpen(true);
               }}
             >
-              Edit
-            </Button>
+              <EditIcon fontSize="small" />
+            </IconButton>
           </Box>
         );
       },
@@ -356,9 +352,11 @@ export default function Staff() {
         maxWidth="sm"
         fullWidth
       >
-        <DialogTitle>Edit Employee Services</DialogTitle>
+        <DialogTitle>
+          {selectedEmployee ? `Edit Services for ${selectedEmployee.name}` : 'Edit Employee Services'}
+        </DialogTitle>
         <DialogContent>
-          <Box sx={{ pt: 2 }}>
+          <Box sx={{ pt: 2, display: 'flex', flexDirection: 'column', gap: 2 }}>
             <FormControl fullWidth>
               <InputLabel id="services-label">Services</InputLabel>
               <Select
@@ -367,9 +365,10 @@ export default function Staff() {
                 value={selectedEmployee?.services || []}
                 onChange={(e) => {
                   if (selectedEmployee) {
+                    const newServices = e.target.value as string[];
                     setSelectedEmployee({
                       ...selectedEmployee,
-                      services: e.target.value as string[],
+                      services: newServices,
                     });
                   }
                 }}
@@ -383,31 +382,66 @@ export default function Staff() {
                           key={value}
                           label={service.name}
                           size="small"
+                          onDelete={() => {
+                            if (selectedEmployee) {
+                              setSelectedEmployee({
+                                ...selectedEmployee,
+                                services: selectedEmployee.services.filter(id => id !== value)
+                              });
+                            }
+                          }}
                           color="primary"
-                          variant="outlined"
                         />
                       ) : null;
                     })}
                   </Box>
                 )}
+                MenuProps={{
+                  PaperProps: {
+                    style: {
+                      maxHeight: 300
+                    },
+                  },
+                }}
               >
-                {services.map((service) => (
-                  <MenuItem key={service.id} value={service.id}>
-                    {service.name}
-                  </MenuItem>
-                ))}
+                {services
+                  .filter(service => service.active)
+                  .sort((a, b) => a.name.localeCompare(b.name))
+                  .map((service) => (
+                    <MenuItem 
+                      key={service.id} 
+                      value={service.id}
+                      sx={{
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                        gap: 1
+                      }}
+                    >
+                      <span>{service.name}</span>
+                      <Typography variant="caption" color="textSecondary">
+                        {service.duration}min - ${service.price}
+                      </Typography>
+                    </MenuItem>
+                  ))}
               </Select>
             </FormControl>
           </Box>
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => {
-            setServiceDialogOpen(false);
-            setSelectedEmployee(null);
-          }}>
+          <Button 
+            onClick={() => {
+              setServiceDialogOpen(false);
+              setSelectedEmployee(null);
+            }}
+          >
             Cancel
           </Button>
-          <Button onClick={handleUpdateServices} variant="contained" color="primary">
+          <Button 
+            onClick={handleUpdateServices} 
+            variant="contained" 
+            color="primary"
+            disabled={!selectedEmployee?.services?.length}
+          >
             Save
           </Button>
         </DialogActions>
