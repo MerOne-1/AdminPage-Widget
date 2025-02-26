@@ -9,6 +9,7 @@ import Dashboard from './pages/Dashboard';
 import Services from './pages/Services';
 import Categories from './pages/Categories';
 import Settings from './pages/Settings';
+import Staff from './pages/Staff';
 import ErrorBoundary from './components/ErrorBoundary';
 
 const theme = createTheme({
@@ -39,7 +40,7 @@ function App() {
             <Route index element={<Dashboard />} />
             <Route path="categories" element={<Categories />} />
             <Route path="services" element={<Services />} />
-            <Route path="staff" element={<div>Staff Management</div>} />
+            <Route path="staff" element={<Staff />} />
             <Route path="schedule" element={<div>Schedule Management</div>} />
             <Route path="settings" element={<Settings />} />
           </Route>

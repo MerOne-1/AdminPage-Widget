@@ -48,39 +48,35 @@ const sampleServices = [
 const sampleEmployees = [
   {
     name: 'John Smith',
-    email: 'john@example.com',
-    phone: '+1234567890',
     role: 'Hairstylist',
     active: true,
-    workingHours: {
-      monday: { start: '09:00', end: '17:00' },
-      tuesday: { start: '09:00', end: '17:00' },
-      wednesday: { start: '09:00', end: '17:00' },
-      thursday: { start: '09:00', end: '17:00' },
-      friday: { start: '09:00', end: '17:00' },
-      saturday: { start: '10:00', end: '15:00' },
-      sunday: null
+    services: [], // Will be filled after services are created
+    schedule: {
+      '0': { start: '09:00', end: '17:00' }, // Sunday
+      '1': { start: '09:00', end: '17:00' }, // Monday
+      '2': { start: '09:00', end: '17:00' }, // Tuesday
+      '3': { start: '09:00', end: '17:00' }, // Wednesday
+      '4': { start: '09:00', end: '17:00' }, // Thursday
+      '5': { start: '09:00', end: '17:00' }, // Friday
+      '6': { start: '10:00', end: '15:00' }, // Saturday
     },
-    serviceIds: [], // Will be filled after services are created
     createdAt: Timestamp.now(),
     updatedAt: Timestamp.now(),
   },
   {
     name: 'Sarah Johnson',
-    email: 'sarah@example.com',
-    phone: '+1234567891',
     role: 'Esthetician',
     active: true,
-    workingHours: {
-      monday: { start: '10:00', end: '18:00' },
-      tuesday: { start: '10:00', end: '18:00' },
-      wednesday: { start: '10:00', end: '18:00' },
-      thursday: { start: '10:00', end: '18:00' },
-      friday: { start: '10:00', end: '18:00' },
-      saturday: null,
-      sunday: null
+    services: [], // Will be filled after services are created
+    schedule: {
+      '0': { start: '09:00', end: '17:00' }, // Sunday
+      '1': { start: '10:00', end: '18:00' }, // Monday
+      '2': { start: '10:00', end: '18:00' }, // Tuesday
+      '3': { start: '10:00', end: '18:00' }, // Wednesday
+      '4': { start: '10:00', end: '18:00' }, // Thursday
+      '5': { start: '10:00', end: '18:00' }, // Friday
+      '6': { start: '10:00', end: '15:00' }, // Saturday
     },
-    serviceIds: [], // Will be filled after services are created
     createdAt: Timestamp.now(),
     updatedAt: Timestamp.now(),
   }
