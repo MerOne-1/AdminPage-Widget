@@ -17,12 +17,26 @@ import {
   Switch,
   IconButton,
   Chip,
-  Paper
+  Paper,
+  Select,
+  MenuItem,
+  FormControl,
+  InputLabel,
+  OutlinedInput
 } from '@mui/material';
 import { DataGrid, GridColDef } from '@mui/x-data-grid';
 import { collection, getDocs, addDoc, updateDoc, doc, deleteDoc } from 'firebase/firestore';
 import ErrorAlert from '../components/ErrorAlert';
 import { db } from '../config/firebase';
+
+interface Service {
+  id: string;
+  name: string;
+  description: string;
+  duration: number;
+  price: number;
+  active: boolean;
+}
 
 interface Employee {
   id: string;
@@ -42,6 +56,7 @@ export default function Staff() {
   const fullScreen = useMediaQuery(theme.breakpoints.down('md'));
 
   const [employees, setEmployees] = useState<Employee[]>([]);
+  const [services, setServices] = useState<Service[]>([]);
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string>('');
@@ -52,6 +67,8 @@ export default function Staff() {
     services: [],
   });
   const [isEditing, setIsEditing] = useState(false);
+  const [serviceDialogOpen, setServiceDialogOpen] = useState(false);
+  const [selectedEmployee, setSelectedEmployee] = useState<Employee | null>(null);
 
   const columns: GridColDef[] = [
     { field: 'name', headerName: 'Name', flex: 1, minWidth: 150 },
@@ -67,6 +84,37 @@ export default function Staff() {
           size="small"
         />
       ),
+    },
+    {
+      field: 'services',
+      headerName: 'Services',
+      flex: 1.5,
+      minWidth: 200,
+      renderCell: (params) => {
+        const employeeServices = services.filter(s => params.value.includes(s.id));
+        return (
+          <Box sx={{ display: 'flex', gap: 0.5, flexWrap: 'wrap' }}>
+            {employeeServices.map(service => (
+              <Chip
+                key={service.id}
+                label={service.name}
+                size="small"
+                color="primary"
+                variant="outlined"
+              />
+            ))}
+            <Button
+              size="small"
+              onClick={() => {
+                setSelectedEmployee(params.row);
+                setServiceDialogOpen(true);
+              }}
+            >
+              Edit
+            </Button>
+          </Box>
+        );
+      },
     },
     {
       field: 'actions',
@@ -95,23 +143,34 @@ export default function Staff() {
   ];
 
   useEffect(() => {
-    const fetchEmployees = async () => {
+    const fetchData = async () => {
       try {
-        const querySnapshot = await getDocs(collection(db, 'employees'));
-        const employeesData = querySnapshot.docs.map((doc) => ({
+        setLoading(true);
+        // Fetch employees
+        const employeesSnapshot = await getDocs(collection(db, 'employees'));
+        const employeesData = employeesSnapshot.docs.map((doc) => ({
           id: doc.id,
           ...doc.data(),
         })) as Employee[];
         setEmployees(employeesData);
+
+        // Fetch services
+        const servicesSnapshot = await getDocs(collection(db, 'services'));
+        const servicesData = servicesSnapshot.docs.map((doc) => ({
+          id: doc.id,
+          ...doc.data(),
+        })) as Service[];
+        setServices(servicesData);
+
         setLoading(false);
       } catch (error) {
-        console.error('Error fetching employees:', error);
-        setError('Failed to load employees');
+        console.error('Error fetching data:', error);
+        setError('Failed to load data');
         setLoading(false);
       }
     };
 
-    fetchEmployees();
+    fetchData();
   }, []);
 
   const handleClose = () => {
@@ -174,6 +233,26 @@ export default function Staff() {
     } catch (error) {
       console.error('Error saving employee:', error);
       setError('Failed to save employee');
+    }
+  };
+
+  const handleUpdateServices = async () => {
+    if (!selectedEmployee) return;
+
+    try {
+      await updateDoc(doc(db, 'employees', selectedEmployee.id), {
+        services: selectedEmployee.services,
+        updatedAt: new Date(),
+      });
+
+      setEmployees(employees.map(emp => 
+        emp.id === selectedEmployee.id ? selectedEmployee : emp
+      ));
+      setServiceDialogOpen(false);
+      setSelectedEmployee(null);
+    } catch (error) {
+      console.error('Error updating employee services:', error);
+      setError('Failed to update employee services');
     }
   };
 
@@ -264,6 +343,72 @@ export default function Staff() {
           <Button onClick={handleClose}>Cancel</Button>
           <Button onClick={handleSave} variant="contained" color="primary">
             {isEditing ? 'Update' : 'Save'}
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      <Dialog
+        open={serviceDialogOpen}
+        onClose={() => {
+          setServiceDialogOpen(false);
+          setSelectedEmployee(null);
+        }}
+        maxWidth="sm"
+        fullWidth
+      >
+        <DialogTitle>Edit Employee Services</DialogTitle>
+        <DialogContent>
+          <Box sx={{ pt: 2 }}>
+            <FormControl fullWidth>
+              <InputLabel id="services-label">Services</InputLabel>
+              <Select
+                labelId="services-label"
+                multiple
+                value={selectedEmployee?.services || []}
+                onChange={(e) => {
+                  if (selectedEmployee) {
+                    setSelectedEmployee({
+                      ...selectedEmployee,
+                      services: e.target.value as string[],
+                    });
+                  }
+                }}
+                input={<OutlinedInput label="Services" />}
+                renderValue={(selected) => (
+                  <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
+                    {selected.map((value) => {
+                      const service = services.find(s => s.id === value);
+                      return service ? (
+                        <Chip
+                          key={value}
+                          label={service.name}
+                          size="small"
+                          color="primary"
+                          variant="outlined"
+                        />
+                      ) : null;
+                    })}
+                  </Box>
+                )}
+              >
+                {services.map((service) => (
+                  <MenuItem key={service.id} value={service.id}>
+                    {service.name}
+                  </MenuItem>
+                ))}
+              </Select>
+            </FormControl>
+          </Box>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => {
+            setServiceDialogOpen(false);
+            setSelectedEmployee(null);
+          }}>
+            Cancel
+          </Button>
+          <Button onClick={handleUpdateServices} variant="contained" color="primary">
+            Save
           </Button>
         </DialogActions>
       </Dialog>
