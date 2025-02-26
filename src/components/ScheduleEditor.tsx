@@ -199,14 +199,9 @@ export default function ScheduleEditor({ open, onClose, employeeName, schedule, 
                     <Typography sx={{ textTransform: 'capitalize' }}>
                       {day}
                     </Typography>
-                    <FormControlLabel
-                      control={
-                        <Checkbox
-                          checked={editingSchedule.weeklySchedule[day]?.isWorking}
-                          onChange={() => handleToggleWorkingDay(day)}
-                        />
-                      }
-                      label="Working day"
+                    <Checkbox
+                      checked={editingSchedule.weeklySchedule[day]?.isWorking}
+                      onChange={() => handleToggleWorkingDay(day)}
                     />
                   </Box>
                   {editingSchedule.weeklySchedule[day]?.isWorking && (
