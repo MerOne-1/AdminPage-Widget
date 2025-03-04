@@ -22,6 +22,8 @@ import {
   CalendarMonth as CalendarIcon,
   Settings as SettingsIcon,
   Category as CategoryIcon,
+  EventNote as BookingsIcon,
+  BugReport as BugReportIcon,
 } from '@mui/icons-material';
 import { Link, Outlet } from 'react-router-dom';
 
@@ -51,8 +53,10 @@ const menuItems = [
   { text: 'Categories', icon: <CategoryIcon />, path: '/categories' },
   { text: 'Services', icon: <CategoryIcon />, path: '/services' },
   { text: 'Staff', icon: <PeopleIcon />, path: '/staff' },
+  { text: 'Bookings', icon: <BookingsIcon />, path: '/bookings' },
   { text: 'Schedule', icon: <CalendarIcon />, path: '/schedule' },
   { text: 'Settings', icon: <SettingsIcon />, path: '/settings' },
+  { text: 'Bookings Debug', icon: <BugReportIcon />, path: '/bookings-debug' },
 ];
 
 export default function Layout() {
