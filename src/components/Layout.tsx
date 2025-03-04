@@ -14,7 +14,6 @@ import {
   ListItemButton,
   ListItemIcon,
   ListItemText,
-  Stack,
 } from '@mui/material';
 import {
   Menu as MenuIcon,
@@ -25,7 +24,6 @@ import {
   Settings as SettingsIcon,
   Category as CategoryIcon,
   EventNote as BookingsIcon,
-  BugReport as BugReportIcon,
 } from '@mui/icons-material';
 import { Link, Outlet } from 'react-router-dom';
 import LanguageSwitcher from './LanguageSwitcher';
