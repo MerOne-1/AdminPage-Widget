@@ -1,0 +1,88 @@
+{
+  "common": {
+    "loading": "Cargando...",
+    "save": "Guardar",
+    "cancel": "Cancelar",
+    "delete": "Eliminar",
+    "edit": "Editar",
+    "close": "Cerrar",
+    "confirm": "Confirmar",
+    "yes": "Sí",
+    "no": "No",
+    "success": "Éxito",
+    "error": "Error",
+    "warning": "Advertencia",
+    "info": "Información"
+  },
+  "navigation": {
+    "dashboard": "Panel",
+    "bookings": "Reservas",
+    "professionals": "Profesionales",
+    "services": "Servicios",
+    "settings": "Configuración",
+    "logout": "Cerrar sesión"
+  },
+  "bookings": {
+    "title": "Reservas",
+    "newBooking": "Nueva Reserva",
+    "viewDetails": "Ver Detalles",
+    "bookingDetails": "Detalles de la Reserva",
+    "deleteBooking": "Eliminar Reserva",
+    "confirmDelete": "¿Está seguro de que desea eliminar esta reserva?",
+    "deleteSuccess": "Reserva eliminada con éxito",
+    "deleteError": "Error al eliminar la reserva",
+    "noBookings": "No se encontraron reservas",
+    "status": {
+      "label": "Estado",
+      "pending": "Pendiente",
+      "confirmed": "Confirmada",
+      "canceled": "Cancelada",
+      "completed": "Completada",
+      "changeStatus": "Cambiar Estado",
+      "updateSuccess": "Estado de la reserva actualizado a {{status}}",
+      "updateError": "Error al actualizar el estado de la reserva",
+      "updating": "Actualizando estado de la reserva..."
+    },
+    "client": {
+      "name": "Nombre del Cliente",
+      "email": "Correo Electrónico",
+      "phone": "Teléfono"
+    },
+    "date": "Fecha",
+    "time": "Hora",
+    "service": "Servicio",
+    "professional": "Profesional",
+    "notes": "Notas",
+    "createdAt": "Creado el",
+    "updatedAt": "Actualizado el"
+  },
+  "professionals": {
+    "title": "Profesionales",
+    "newProfessional": "Nuevo Profesional",
+    "editProfessional": "Editar Profesional",
+    "deleteProfessional": "Eliminar Profesional",
+    "confirmDelete": "¿Está seguro de que desea eliminar este profesional?",
+    "name": "Nombre",
+    "email": "Correo Electrónico",
+    "phone": "Teléfono",
+    "active": "Activo",
+    "inactive": "Inactivo",
+    "status": "Estado",
+    "noProfessionals": "No se encontraron profesionales"
+  },
+  "services": {
+    "title": "Servicios",
+    "newService": "Nuevo Servicio",
+    "editService": "Editar Servicio",
+    "deleteService": "Eliminar Servicio",
+    "confirmDelete": "¿Está seguro de que desea eliminar este servicio?",
+    "name": "Nombre",
+    "description": "Descripción",
+    "duration": "Duración",
+    "price": "Precio",
+    "active": "Activo",
+    "inactive": "Inactivo",
+    "status": "Estado",
+    "noServices": "No se encontraron servicios"
+  }
+}

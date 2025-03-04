@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { 
   Box, 
   Typography, 
@@ -131,6 +132,7 @@ function TabPanel(props: TabPanelProps) {
 }
 
 export default function Bookings() {
+  const { t } = useTranslation();
   const [value, setValue] = useState(0);
   const [professionals, setProfessionals] = useState<Professional[]>([]);
   const [loading, setLoading] = useState(true);
@@ -177,7 +179,7 @@ export default function Bookings() {
     // Show loading snackbar
     setSnackbar({
       open: true,
-      message: 'Updating booking status...',
+      message: t('bookings.status.updating'),
       severity: 'info'
     });
     
@@ -194,7 +196,7 @@ export default function Bookings() {
       // Success message
       setSnackbar({
         open: true,
-        message: `Booking status updated to ${newStatus}`,
+        message: t('bookings.status.updateSuccess', { status: t(`bookings.status.${newStatus}`) }),
         severity: 'success'
       });
       
@@ -206,7 +208,7 @@ export default function Bookings() {
       // Error message
       setSnackbar({
         open: true,
-        message: 'Failed to update booking status: ' + (error instanceof Error ? error.message : 'Unknown error'),
+        message: t('bookings.status.updateError') + ': ' + (error instanceof Error ? error.message : 'Unknown error'),
         severity: 'error'
       });
     }
@@ -234,7 +236,7 @@ export default function Bookings() {
       
       setSnackbar({
         open: true,
-        message: 'Booking deleted successfully',
+        message: t('bookings.deleteSuccess'),
         severity: 'success'
       });
       
@@ -243,7 +245,7 @@ export default function Bookings() {
       console.error('Error deleting booking:', error);
       setSnackbar({
         open: true,
-        message: 'Failed to delete booking',
+        message: t('bookings.deleteError'),
         severity: 'error'
       });
     }
@@ -597,7 +599,7 @@ export default function Bookings() {
       
       {/* Booking Details Dialog */}
       <Dialog open={openDialog} onClose={handleCloseDialog} maxWidth="sm" fullWidth>
-        <DialogTitle>Booking Details</DialogTitle>
+        <DialogTitle>{t('bookings.bookingDetails')}</DialogTitle>
         <DialogContent>
           {selectedBooking && (
             <Grid container spacing={2}>

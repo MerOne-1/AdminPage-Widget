@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { styled } from '@mui/material/styles';
 import {
   Box,
@@ -13,6 +14,7 @@ import {
   ListItemButton,
   ListItemIcon,
   ListItemText,
+  Stack,
 } from '@mui/material';
 import {
   Menu as MenuIcon,
@@ -26,6 +28,7 @@ import {
   BugReport as BugReportIcon,
 } from '@mui/icons-material';
 import { Link, Outlet } from 'react-router-dom';
+import LanguageSwitcher from './LanguageSwitcher';
 
 const drawerWidth = 240;
 
@@ -48,19 +51,22 @@ const Main = styled('main', { shouldForwardProp: (prop) => prop !== 'open' })<{
   }),
 }));
 
-const menuItems = [
-  { text: 'Dashboard', icon: <DashboardIcon />, path: '/' },
-  { text: 'Categories', icon: <CategoryIcon />, path: '/categories' },
-  { text: 'Services', icon: <CategoryIcon />, path: '/services' },
-  { text: 'Staff', icon: <PeopleIcon />, path: '/staff' },
-  { text: 'Bookings', icon: <BookingsIcon />, path: '/bookings' },
-  { text: 'Schedule', icon: <CalendarIcon />, path: '/schedule' },
-  { text: 'Settings', icon: <SettingsIcon />, path: '/settings' },
-  { text: 'Bookings Debug', icon: <BugReportIcon />, path: '/bookings-debug' },
-];
+// Menu items will be translated in the component
 
 export default function Layout() {
   const [open, setOpen] = useState(true);
+  const { t } = useTranslation();
+  
+  // Define menu items with translations
+  const menuItems = [
+    { text: t('navigation.dashboard'), icon: <DashboardIcon />, path: '/' },
+    { text: 'Categories', icon: <CategoryIcon />, path: '/categories' },
+    { text: t('navigation.services'), icon: <CategoryIcon />, path: '/services' },
+    { text: t('navigation.professionals'), icon: <PeopleIcon />, path: '/staff' },
+    { text: t('navigation.bookings'), icon: <BookingsIcon />, path: '/bookings' },
+    { text: 'Schedule', icon: <CalendarIcon />, path: '/schedule' },
+    { text: t('navigation.settings'), icon: <SettingsIcon />, path: '/settings' }
+  ];
 
   return (
     <Box sx={{ display: 'flex' }}>
@@ -74,9 +80,10 @@ export default function Layout() {
           >
             {open ? <ChevronLeftIcon /> : <MenuIcon />}
           </IconButton>
-          <Typography variant="h6" noWrap component="div">
+          <Typography variant="h6" noWrap component="div" sx={{ flexGrow: 1 }}>
             Booking Widget Admin
           </Typography>
+          <LanguageSwitcher />
         </Toolbar>
       </AppBar>
       <Drawer

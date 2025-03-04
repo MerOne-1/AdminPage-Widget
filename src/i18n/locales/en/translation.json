@@ -1,0 +1,88 @@
+{
+  "common": {
+    "loading": "Loading...",
+    "save": "Save",
+    "cancel": "Cancel",
+    "delete": "Delete",
+    "edit": "Edit",
+    "close": "Close",
+    "confirm": "Confirm",
+    "yes": "Yes",
+    "no": "No",
+    "success": "Success",
+    "error": "Error",
+    "warning": "Warning",
+    "info": "Information"
+  },
+  "navigation": {
+    "dashboard": "Dashboard",
+    "bookings": "Bookings",
+    "professionals": "Professionals",
+    "services": "Services",
+    "settings": "Settings",
+    "logout": "Logout"
+  },
+  "bookings": {
+    "title": "Bookings",
+    "newBooking": "New Booking",
+    "viewDetails": "View Details",
+    "bookingDetails": "Booking Details",
+    "deleteBooking": "Delete Booking",
+    "confirmDelete": "Are you sure you want to delete this booking?",
+    "deleteSuccess": "Booking deleted successfully",
+    "deleteError": "Failed to delete booking",
+    "noBookings": "No bookings found",
+    "status": {
+      "label": "Status",
+      "pending": "Pending",
+      "confirmed": "Confirmed",
+      "canceled": "Canceled",
+      "completed": "Completed",
+      "changeStatus": "Change Status",
+      "updateSuccess": "Booking status updated to {{status}}",
+      "updateError": "Failed to update booking status",
+      "updating": "Updating booking status..."
+    },
+    "client": {
+      "name": "Client Name",
+      "email": "Email",
+      "phone": "Phone"
+    },
+    "date": "Date",
+    "time": "Time",
+    "service": "Service",
+    "professional": "Professional",
+    "notes": "Notes",
+    "createdAt": "Created At",
+    "updatedAt": "Updated At"
+  },
+  "professionals": {
+    "title": "Professionals",
+    "newProfessional": "New Professional",
+    "editProfessional": "Edit Professional",
+    "deleteProfessional": "Delete Professional",
+    "confirmDelete": "Are you sure you want to delete this professional?",
+    "name": "Name",
+    "email": "Email",
+    "phone": "Phone",
+    "active": "Active",
+    "inactive": "Inactive",
+    "status": "Status",
+    "noProfessionals": "No professionals found"
+  },
+  "services": {
+    "title": "Services",
+    "newService": "New Service",
+    "editService": "Edit Service",
+    "deleteService": "Delete Service",
+    "confirmDelete": "Are you sure you want to delete this service?",
+    "name": "Name",
+    "description": "Description",
+    "duration": "Duration",
+    "price": "Price",
+    "active": "Active",
+    "inactive": "Inactive",
+    "status": "Status",
+    "noServices": "No services found"
+  }
+}
