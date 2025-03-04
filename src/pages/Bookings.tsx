@@ -137,6 +137,14 @@ export default function Bookings() {
   const [selectedBooking, setSelectedBooking] = useState<Booking | null>(null);
   const [openDialog, setOpenDialog] = useState(false);
   const [services, setServices] = useState<Record<string, any>>({});
+  const [snackbar, setSnackbar] = useState<{open: boolean, message: string, severity: 'success' | 'error' | 'info' | 'warning'}>({ 
+    open: false, 
+    message: '', 
+    severity: 'info' 
+  });
+  const [statusAnchorEl, setStatusAnchorEl] = useState<null | HTMLElement>(null);
+  const [statusBookingId, setStatusBookingId] = useState<string | null>(null);
+  const [confirmDeleteDialog, setConfirmDeleteDialog] = useState(false);
 
   const handleChange = (event: React.SyntheticEvent, newValue: number) => {
     setValue(newValue);
@@ -148,11 +156,107 @@ export default function Bookings() {
   };
 
   const handleCloseDialog = () => {
+    setSelectedBooking(null);
     setOpenDialog(false);
   };
 
-  useEffect(() => {
-    async function fetchData() {
+  const handleStatusMenuOpen = (event: React.MouseEvent<HTMLElement>, bookingId: string) => {
+    setStatusAnchorEl(event.currentTarget);
+    setStatusBookingId(bookingId);
+  };
+
+  const handleStatusMenuClose = () => {
+    setStatusAnchorEl(null);
+  };
+
+  const handleStatusChange = async (newStatus: 'pending' | 'confirmed' | 'canceled' | 'completed') => {
+    // Get the booking ID either from the selected booking in the dialog or from the status menu
+    const bookingId = statusBookingId || (selectedBooking ? selectedBooking.id : null);
+    if (!bookingId) return;
+    
+    // Show loading snackbar
+    setSnackbar({
+      open: true,
+      message: 'Updating booking status...',
+      severity: 'info'
+    });
+    
+    try {
+      // Update the status in Firestore
+      const bookingRef = doc(db, 'bookings', bookingId);
+      await updateDoc(bookingRef, { status: newStatus });
+      
+      // Update local state if we're in the dialog
+      if (selectedBooking && selectedBooking.id === bookingId) {
+        setSelectedBooking({ ...selectedBooking, status: newStatus });
+      }
+      
+      // Success message
+      setSnackbar({
+        open: true,
+        message: `Booking status updated to ${newStatus}`,
+        severity: 'success'
+      });
+      
+      // Refresh data to ensure UI is up to date - after showing success message
+      setTimeout(() => {
+        fetchData();
+      }, 500);
+    } catch (error) {
+      // Error message
+      setSnackbar({
+        open: true,
+        message: 'Failed to update booking status: ' + (error instanceof Error ? error.message : 'Unknown error'),
+        severity: 'error'
+      });
+    }
+    
+    handleStatusMenuClose();
+  };
+
+  const handleDeleteBooking = async () => {
+    if (!selectedBooking) return;
+    
+    try {
+      const bookingRef = doc(db, 'bookings', selectedBooking.id);
+      await deleteDoc(bookingRef);
+      
+      // Update local state - remove the booking from the professionals array
+      const updatedProfessionals = [...professionals];
+      const profIndex = updatedProfessionals.findIndex(p => p.id === selectedBooking.professionalId);
+      
+      if (profIndex !== -1) {
+        const professional = updatedProfessionals[profIndex];
+        const updatedBookings = (professional.bookings || []).filter(b => b.id !== selectedBooking.id);
+        updatedProfessionals[profIndex] = { ...professional, bookings: updatedBookings };
+        setProfessionals(updatedProfessionals);
+      }
+      
+      setSnackbar({
+        open: true,
+        message: 'Booking deleted successfully',
+        severity: 'success'
+      });
+      
+      handleCloseDialog();
+    } catch (error) {
+      console.error('Error deleting booking:', error);
+      setSnackbar({
+        open: true,
+        message: 'Failed to delete booking',
+        severity: 'error'
+      });
+    }
+    
+    setConfirmDeleteDialog(false);
+  };
+
+  const handleSnackbarClose = () => {
+    setSnackbar({ ...snackbar, open: false });
+  };
+
+  // Define fetchData function that can be called from other functions
+  const fetchData = async () => {
       try {
         // Fetch services first for reference
         const servicesSnapshot = await getDocs(collection(db, 'services'));
@@ -276,6 +380,8 @@ export default function Bookings() {
       }
     }
 
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  useEffect(() => {
     fetchData();
   }, []);
 
@@ -465,6 +571,8 @@ export default function Bookings() {
                               label={booking.status} 
                               color={getStatusColor(booking.status)}
                               size="small"
+                              onClick={(e) => handleStatusMenuOpen(e, booking.id)}
+                              sx={{ cursor: 'pointer' }}
                             />
                           </TableCell>
                           <TableCell>
@@ -568,10 +676,76 @@ export default function Bookings() {
             </Grid>
           )}
         </DialogContent>
-        <DialogActions>
-          <Button onClick={handleCloseDialog}>Close</Button>
+        <DialogActions sx={{ justifyContent: 'space-between' }}>
+          <Box>
+            <Button 
+              color="error" 
+              startIcon={<DeleteIcon />}
+              onClick={() => setConfirmDeleteDialog(true)}
+            >
+              Delete
+            </Button>
+          </Box>
+          <Box>
+            <Button 
+              color="primary" 
+              startIcon={<SwapHorizIcon />}
+              onClick={(e) => handleStatusMenuOpen(e, selectedBooking ? selectedBooking.id : '')}
+              sx={{ mr: 1 }}
+            >
+              Change Status
+            </Button>
+            <Button onClick={handleCloseDialog}>Close</Button>
+          </Box>
         </DialogActions>
       </Dialog>
+
+      {/* Confirm Delete Dialog */}
+      <Dialog
+        open={confirmDeleteDialog}
+        onClose={() => setConfirmDeleteDialog(false)}
+      >
+        <DialogTitle>Confirm Deletion</DialogTitle>
+        <DialogContent>
+          <Typography>Are you sure you want to delete this booking? This action cannot be undone.</Typography>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setConfirmDeleteDialog(false)}>Cancel</Button>
+          <Button color="error" onClick={handleDeleteBooking}>Delete</Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Snackbar for notifications */}
+      <Snackbar 
+        open={snackbar.open} 
+        autoHideDuration={6000} 
+        onClose={handleSnackbarClose}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+      >
+        <Alert onClose={handleSnackbarClose} severity={snackbar.severity} sx={{ width: '100%' }}>
+          {snackbar.message}
+        </Alert>
+      </Snackbar>
+
+      {/* Status Menu - Shared between table and dialog */}
+      <Menu
+        anchorEl={statusAnchorEl}
+        open={Boolean(statusAnchorEl)}
+        onClose={handleStatusMenuClose}
+      >
+        <MenuItem onClick={() => handleStatusChange('pending')}>
+          <Chip label="Pending" color="warning" size="small" sx={{ mr: 1 }} /> Pending
+        </MenuItem>
+        <MenuItem onClick={() => handleStatusChange('confirmed')}>
+          <Chip label="Confirmed" color="success" size="small" sx={{ mr: 1 }} /> Confirmed
+        </MenuItem>
+        <MenuItem onClick={() => handleStatusChange('completed')}>
+          <Chip label="Completed" color="primary" size="small" sx={{ mr: 1 }} /> Completed
+        </MenuItem>
+        <MenuItem onClick={() => handleStatusChange('canceled')}>
+          <Chip label="Canceled" color="error" size="small" sx={{ mr: 1 }} /> Canceled
+        </MenuItem>
+      </Menu>
     </Box>
   );
 }
