@@ -54,6 +54,7 @@ interface Employee {
   active: boolean;
   services: string[];
   schedule: EmployeeSchedule;
+  appointmentGap?: number; // Gap time between appointments in minutes
   createdAt: any;
   updatedAt: any;
 }
@@ -72,6 +73,7 @@ export default function Staff() {
     role: '',
     active: true,
     services: [],
+    appointmentGap: 0, // Default to no gap
     schedule: {
       weeklySchedule: {
         monday: { isWorking: true, timeSlots: [{ start: '09:00', end: '17:00' }] },
@@ -95,6 +97,19 @@ export default function Staff() {
     { field: 'name', headerName: 'Name', flex: 1, minWidth: 150 },
     { field: 'role', headerName: 'Role', flex: 1, minWidth: 150 },
     { field: 'email', headerName: 'Email', flex: 1, minWidth: 200 },
+    { 
+      field: 'appointmentGap', 
+      headerName: 'Gap Time', 
+      width: 120,
+      renderCell: (params) => {
+        const gapTime = params.value || 0;
+        return (
+          <Typography variant="body2">
+            {gapTime} {gapTime === 1 ? 'minute' : 'minutes'}
+          </Typography>
+        );
+      },
+    },
     {
       field: 'active',
       headerName: 'Status',
@@ -335,7 +350,12 @@ export default function Staff() {
   return (
     <Box>
       <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 2 }}>
-        <Typography variant="h4">Staff Management</Typography>
+        <Box>
+          <Typography variant="h4">Staff Management</Typography>
+          <Typography variant="subtitle1" color="text.secondary">
+            Manage staff members and their appointment settings
+          </Typography>
+        </Box>
         <Button
           variant="contained"
           color="primary"
@@ -345,6 +365,7 @@ export default function Staff() {
               role: '',
               email: '',
               active: true,
+              appointmentGap: 0,
               services: [],
             });
             setIsEditing(false);
@@ -411,6 +432,15 @@ export default function Staff() {
               onChange={(e) => setNewEmployee({ ...newEmployee, email: e.target.value })}
               fullWidth
               helperText="Used for calendar integration"
+            />
+            <TextField
+              label="Appointment Gap (minutes)"
+              type="number"
+              value={newEmployee.appointmentGap || 0}
+              onChange={(e) => setNewEmployee({ ...newEmployee, appointmentGap: parseInt(e.target.value) || 0 })}
+              fullWidth
+              InputProps={{ inputProps: { min: 0, max: 120 } }}
+              helperText="Time needed between appointments (for travel, setup, etc.)"
             />
             <FormControlLabel
               control={
