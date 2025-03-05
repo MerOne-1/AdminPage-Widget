@@ -77,6 +77,8 @@ interface Booking {
   professionalName?: string;
   status: 'pending' | 'confirmed' | 'canceled' | 'completed';
   notes?: string;
+  clientComments?: string;
+  clientInfo?: any; // For direct access to the clientInfo object
   createdAt?: string;
   updatedAt?: string;
 }
@@ -153,6 +155,8 @@ export default function Bookings() {
   };
 
   const handleBookingClick = (booking: Booking) => {
+    console.log('Booking data:', booking);
+    console.log('Client info:', booking.clientInfo);
     setSelectedBooking(booking);
     setOpenDialog(true);
   };
@@ -353,13 +357,29 @@ export default function Bookings() {
                   }
                 }
                 
+                // Extract client info and comments if available
+                let clientComments = '';
+                let clientInfo = null;
+                
+                if (bookingData.clientInfo) {
+                  // Preserve the entire clientInfo object
+                  clientInfo = bookingData.clientInfo;
+                  
+                  // Extract comments if available
+                  if (bookingData.clientInfo.comments) {
+                    clientComments = bookingData.clientInfo.comments;
+                  }
+                }
+                
                 // Add booking to employee's bookings
                 const timeSlot = bookingData.timeSlot || bookingData.time;
                 employee.bookings[bookingDate][timeSlot] = {
                   ...bookingData,
                   id: bookingDoc.id,
                   clientName: clientName,
-                  serviceName: serviceName
+                  serviceName: serviceName,
+                  clientComments: clientComments,
+                  clientInfo: clientInfo // Preserve the entire clientInfo object
                 };
               }
             }
@@ -444,6 +464,27 @@ export default function Bookings() {
     
     const serviceId = booking.serviceId || booking.service;
     return serviceId && services[serviceId]?.name || 'Unknown Service';
+  };
+
+  // Function to get client comments
+  const getClientComments = (booking: any): string => {
+    if (!booking) return '-';
+    
+    // Check for comments in different possible locations
+    if (booking.clientComments) {
+      return booking.clientComments;
+    }
+    
+    if (booking.clientInfo && booking.clientInfo.comments) {
+      return booking.clientInfo.comments;
+    }
+    
+    // For direct Firebase data structure
+    if (booking.clientInfo && typeof booking.clientInfo === 'object' && 'comments' in booking.clientInfo) {
+      return booking.clientInfo.comments;
+    }
+    
+    return '-';
   };
 
   // Function to format date for display
@@ -554,6 +595,7 @@ export default function Bookings() {
                         <TableCell>Time</TableCell>
                         <TableCell>Client</TableCell>
                         <TableCell>Service</TableCell>
+                        <TableCell>Comments</TableCell>
                         <TableCell>Status</TableCell>
                         <TableCell>Actions</TableCell>
                       </TableRow>
@@ -568,6 +610,9 @@ export default function Bookings() {
                           <TableCell>{getBookingTime(booking)}</TableCell>
                           <TableCell>{booking?.clientName || 'Unknown Client'}</TableCell>
                           <TableCell>{booking ? getServiceName(booking) : 'Unknown Service'}</TableCell>
+                          <TableCell>
+                            {getClientComments(booking)}
+                          </TableCell>
                           <TableCell>
                             <Chip 
                               label={booking.status} 
@@ -675,6 +720,21 @@ export default function Bookings() {
                   </Card>
                 </Grid>
               )}
+              
+              <Grid item xs={12}>
+                <Card variant="outlined">
+                  <CardContent>
+                    <Typography variant="h6" gutterBottom>
+                      Client Comments
+                    </Typography>
+                    <Typography variant="body1">
+                      {getClientComments(selectedBooking) !== '-' 
+                        ? getClientComments(selectedBooking) 
+                        : 'No comments provided'}
+                    </Typography>
+                  </CardContent>
+                </Card>
+              </Grid>
             </Grid>
           )}
         </DialogContent>
