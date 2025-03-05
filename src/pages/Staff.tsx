@@ -50,6 +50,7 @@ interface Employee {
   id: string;
   name: string;
   role: string;
+  email?: string; // Add email field
   active: boolean;
   services: string[];
   schedule: EmployeeSchedule;
@@ -93,6 +94,7 @@ export default function Staff() {
   const columns: GridColDef[] = [
     { field: 'name', headerName: 'Name', flex: 1, minWidth: 150 },
     { field: 'role', headerName: 'Role', flex: 1, minWidth: 150 },
+    { field: 'email', headerName: 'Email', flex: 1, minWidth: 200 },
     {
       field: 'active',
       headerName: 'Status',
@@ -228,6 +230,7 @@ export default function Staff() {
     setNewEmployee({
       name: '',
       role: '',
+      email: '',
       active: true,
       services: [],
     });
@@ -340,6 +343,7 @@ export default function Staff() {
             setNewEmployee({
               name: '',
               role: '',
+              email: '',
               active: true,
               services: [],
             });
@@ -399,6 +403,14 @@ export default function Staff() {
               onChange={(e) => setNewEmployee({ ...newEmployee, role: e.target.value })}
               fullWidth
               required
+            />
+            <TextField
+              label="Email"
+              type="email"
+              value={newEmployee.email || ''}
+              onChange={(e) => setNewEmployee({ ...newEmployee, email: e.target.value })}
+              fullWidth
+              helperText="Used for calendar integration"
             />
             <FormControlLabel
               control={
