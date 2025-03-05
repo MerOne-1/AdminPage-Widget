@@ -152,6 +152,81 @@ export default function CalendarSettings() {
 
     window.open(authUrl, '_blank');
   };
+  
+  const copyAuthLinkToClipboard = (employeeEmail: string) => {
+    if (!settings.credentials) {
+      setSnackbar({
+        open: true,
+        message: 'Google Calendar credentials not configured',
+        severity: 'error'
+      });
+      return;
+    }
+    
+    const scopes = [
+      'https://www.googleapis.com/auth/calendar',
+      'https://www.googleapis.com/auth/calendar.events'
+    ];
+
+    const authUrl = `https://accounts.google.com/o/oauth2/v2/auth?` +
+      `client_id=${encodeURIComponent(settings.credentials.client_id)}` +
+      `&redirect_uri=${encodeURIComponent(settings.credentials.redirect_uris[0])}` +
+      `&response_type=code` +
+      `&scope=${encodeURIComponent(scopes.join(' '))}` +
+      `&access_type=offline` +
+      `&prompt=consent` +
+      `&state=${encodeURIComponent(employeeEmail)}`;
+    
+    navigator.clipboard.writeText(authUrl);
+    
+    setSnackbar({
+      open: true,
+      message: `Authorization link for ${employeeEmail} copied to clipboard. You can now paste it into an email.`,
+      severity: 'success'
+    });
+  };
+  
+  const sendAuthLinkByEmail = (employeeEmail: string, employeeName: string) => {
+    if (!settings.credentials) {
+      setSnackbar({
+        open: true,
+        message: 'Google Calendar credentials not configured',
+        severity: 'error'
+      });
+      return;
+    }
+    
+    const scopes = [
+      'https://www.googleapis.com/auth/calendar',
+      'https://www.googleapis.com/auth/calendar.events'
+    ];
+
+    const authUrl = `https://accounts.google.com/o/oauth2/v2/auth?` +
+      `client_id=${encodeURIComponent(settings.credentials.client_id)}` +
+      `&redirect_uri=${encodeURIComponent(settings.credentials.redirect_uris[0])}` +
+      `&response_type=code` +
+      `&scope=${encodeURIComponent(scopes.join(' '))}` +
+      `&access_type=offline` +
+      `&prompt=consent` +
+      `&state=${encodeURIComponent(employeeEmail)}`;
+    
+    const subject = encodeURIComponent('Connect your Google Calendar');
+    const body = encodeURIComponent(
+      `Hello ${employeeName},\n\n` +
+      `Please click the link below to connect your Google Calendar with our booking system. ` +
+      `This will allow your appointments to automatically appear in your calendar.\n\n` +
+      `${authUrl}\n\n` +
+      `Thank you!`
+    );
+    
+    window.open(`mailto:${employeeEmail}?subject=${subject}&body=${body}`);
+    
+    setSnackbar({
+      open: true,
+      message: `Email drafted for ${employeeEmail}`,
+      severity: 'success'
+    });
+  };
 
   const handleCloseSnackbar = () => {
     setSnackbar({
@@ -240,17 +315,45 @@ export default function CalendarSettings() {
                   Staff Calendar Authorization
                 </Typography>
                 <Typography paragraph>
-                  As the admin, you can authorize Google Calendar access for each staff member. When you click "Authorize":
+                  You have three options to authorize staff members' Google Calendars:
+                </Typography>
+                
+                <Typography variant="subtitle2" fontWeight="bold" gutterBottom>
+                  Option 1: Direct Authorization ("Authorize" button)
+                </Typography>
+                <Typography paragraph>
+                  Use this if you have access to the staff member's Google account:
                 </Typography>
                 <ol>
-                  <li>You'll be redirected to Google's consent screen</li>
-                  <li>Log in with the Google account that should be connected to this staff member</li>
-                  <li>Click "Allow" to give permission to access the calendar</li>
-                  <li>You'll be redirected back, and the calendar will be connected to this staff member</li>
+                  <li>Click "Authorize" next to the staff member</li>
+                  <li>Log in with their Google account</li>
+                  <li>Click "Allow" to give permission</li>
                 </ol>
-                <Typography variant="body2" color="text.secondary">
-                  Important: Make sure to log in with the correct Google account for each staff member before authorizing.
+                
+                <Typography variant="subtitle2" fontWeight="bold" gutterBottom>
+                  Option 2: Send Authorization Link by Email ("Email Link" button)
                 </Typography>
+                <Typography paragraph>
+                  Best option when staff members need to authorize themselves:
+                </Typography>
+                <ol>
+                  <li>Click "Email Link" next to the staff member</li>
+                  <li>An email draft will open with the authorization link</li>
+                  <li>Send the email to the staff member</li>
+                  <li>They click the link and authorize access to their calendar</li>
+                </ol>
+                
+                <Typography variant="subtitle2" fontWeight="bold" gutterBottom>
+                  Option 3: Copy Authorization Link ("Copy Link" button)
+                </Typography>
+                <Typography paragraph>
+                  Use this to share the link via other communication channels:
+                </Typography>
+                <ol>
+                  <li>Click "Copy Link" next to the staff member</li>
+                  <li>The authorization link is copied to your clipboard</li>
+                  <li>Paste it into any messaging app or custom email</li>
+                </ol>
               </Alert>
               
               <TableContainer component={Paper}>
@@ -276,14 +379,32 @@ export default function CalendarSettings() {
                           )}
                         </TableCell>
                         <TableCell>
-                          <Button
-                            variant="contained"
-                            color="primary"
-                            disabled={!settings.credentials}
-                            onClick={() => generateAuthUrl(employee.email!)}
-                          >
-                            {settings.tokens && settings.tokens[employee.email!] ? 'Reauthorize' : 'Authorize'}
-                          </Button>
+                          <Box sx={{ display: 'flex', gap: 1 }}>
+                            <Button
+                              variant="contained"
+                              color="primary"
+                              disabled={!settings.credentials}
+                              onClick={() => generateAuthUrl(employee.email!)}
+                            >
+                              {settings.tokens && settings.tokens[employee.email!] ? 'Reauthorize' : 'Authorize'}
+                            </Button>
+                            <Button
+                              variant="outlined"
+                              color="secondary"
+                              disabled={!settings.credentials}
+                              onClick={() => copyAuthLinkToClipboard(employee.email!)}
+                            >
+                              Copy Link
+                            </Button>
+                            <Button
+                              variant="outlined"
+                              color="info"
+                              disabled={!settings.credentials}
+                              onClick={() => sendAuthLinkByEmail(employee.email!, employee.name)}
+                            >
+                              Email Link
+                            </Button>
+                          </Box>
                         </TableCell>
                       </TableRow>
                     ))}
