@@ -53,7 +53,7 @@ export default function CalendarSettings() {
   const [credentials, setCredentials] = useState<CalendarCredentials>({
     client_id: '',
     client_secret: '',
-    redirect_uris: ['']
+    redirect_uris: ['https://europe-west1-widget-v2-2dee9.cloudfunctions.net/googleAuthCallback']
   });
   const [snackbar, setSnackbar] = useState({
     open: false,
@@ -173,6 +173,26 @@ export default function CalendarSettings() {
       <Typography variant="h4" gutterBottom>
         Google Calendar Integration
       </Typography>
+      
+      <Card sx={{ mb: 3 }}>
+        <CardContent>
+          <Typography variant="h6" gutterBottom>
+            How Google Calendar Integration Works
+          </Typography>
+          <Typography variant="body1" paragraph>
+            This integration automatically adds booking events to your staff's Google Calendars when new bookings are created.
+          </Typography>
+          
+          <Typography variant="subtitle1" fontWeight="bold" gutterBottom>
+            Setup Steps (Admin Only):
+          </Typography>
+          <ol>
+            <li><Typography>Add Google Calendar API credentials (one-time setup)</Typography></li>
+            <li><Typography>For each staff member, authorize their Google Calendar by logging in with their Google account</Typography></li>
+            <li><Typography>That's it! New bookings will automatically appear in the connected Google Calendars</Typography></li>
+          </ol>
+        </CardContent>
+      </Card>
 
       <Grid container spacing={3}>
         <Grid item xs={12}>
@@ -216,7 +236,21 @@ export default function CalendarSettings() {
               </Typography>
               
               <Alert severity="info" sx={{ mb: 2 }}>
-                Each staff member needs to authorize access to their Google Calendar. Click "Authorize" to start the process.
+                <Typography variant="subtitle1" fontWeight="bold" gutterBottom>
+                  Staff Calendar Authorization
+                </Typography>
+                <Typography paragraph>
+                  As the admin, you can authorize Google Calendar access for each staff member. When you click "Authorize":
+                </Typography>
+                <ol>
+                  <li>You'll be redirected to Google's consent screen</li>
+                  <li>Log in with the Google account that should be connected to this staff member</li>
+                  <li>Click "Allow" to give permission to access the calendar</li>
+                  <li>You'll be redirected back, and the calendar will be connected to this staff member</li>
+                </ol>
+                <Typography variant="body2" color="text.secondary">
+                  Important: Make sure to log in with the correct Google account for each staff member before authorizing.
+                </Typography>
               </Alert>
               
               <TableContainer component={Paper}>
@@ -282,7 +316,17 @@ export default function CalendarSettings() {
         <DialogContent>
           <Box sx={{ pt: 2, display: 'flex', flexDirection: 'column', gap: 2 }}>
             <Alert severity="info" sx={{ mb: 2 }}>
-              You need to create OAuth 2.0 credentials in the Google Cloud Console. For detailed instructions, see the README.
+              <Typography variant="subtitle1" fontWeight="bold" gutterBottom>
+                How to set up Google Calendar integration:
+              </Typography>
+              <ol>
+                <li>Go to the <a href="https://console.cloud.google.com/apis/credentials" target="_blank" rel="noopener noreferrer">Google Cloud Console</a></li>
+                <li>Create a project or select an existing one</li>
+                <li>Enable the Google Calendar API</li>
+                <li>Create OAuth 2.0 credentials (Web application type)</li>
+                <li>Add the redirect URI shown below to your OAuth credentials</li>
+                <li>Copy the Client ID and Client Secret and paste them here</li>
+              </ol>
             </Alert>
             
             <TextField
@@ -303,12 +347,14 @@ export default function CalendarSettings() {
             />
             
             <TextField
-              label="Redirect URI"
+              label="Redirect URI (Copy this to Google Cloud Console)"
               value={credentials.redirect_uris[0]}
-              onChange={(e) => setCredentials({ ...credentials, redirect_uris: [e.target.value] })}
               fullWidth
               required
-              helperText="Example: https://your-app.com/auth/google/callback"
+              InputProps={{
+                readOnly: true,
+              }}
+              helperText="This is the callback URL for Google OAuth. Add this exact URL to your authorized redirect URIs in Google Cloud Console."
             />
           </Box>
         </DialogContent>
