@@ -63,6 +63,7 @@ export default function Layout() {
     { text: t('navigation.professionals'), icon: <PeopleIcon />, path: '/staff' },
     { text: t('navigation.bookings'), icon: <BookingsIcon />, path: '/bookings' },
     { text: 'Schedule', icon: <CalendarIcon />, path: '/schedule' },
+    { text: 'Calendar Integration', icon: <CalendarIcon />, path: '/calendar-settings' },
     { text: t('navigation.settings'), icon: <SettingsIcon />, path: '/settings' }
   ];
 

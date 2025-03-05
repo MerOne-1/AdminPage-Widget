@@ -13,6 +13,7 @@ import Categories from './pages/Categories';
 import Settings from './pages/Settings';
 import Staff from './pages/Staff';
 import Bookings from './pages/Bookings';
+import CalendarSettings from './pages/CalendarSettings';
 import ErrorBoundary from './components/ErrorBoundary';
 
 const theme = createTheme({
@@ -47,6 +48,7 @@ function App() {
             <Route path="staff" element={<Staff />} />
             <Route path="bookings" element={<Bookings />} />
             <Route path="schedule" element={<div>Schedule Management</div>} />
+            <Route path="calendar-settings" element={<CalendarSettings />} />
             <Route path="settings" element={<Settings />} />
           </Route>
           </Routes>
